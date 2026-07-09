@@ -1,33 +1,113 @@
-HELP.md
+# =========================================================================
+# Spring Boot / Maven Standard GitIgnore
+# =========================================================================
+
+# Target (Maven Build Output)
 target/
+build/
+bin/
+out/
+dist/
+HELP.md
+
+# Maven Wrapper JAR (executable/wrapper config should be kept, jar ignored)
 .mvn/wrapper/maven-wrapper.jar
+
+# Avoid ignoring target folders inside src (Maven standard exclusions)
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# =========================================================================
+# IDEs and Editors
+# =========================================================================
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
+out/
 
-### NetBeans ###
+# Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.apt_generated/
+
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# VS Code
 .vscode/
+
+# STS (Spring Tool Suite)
+.sts4-cache/
+
+# =========================================================================
+# Operating System & Cache Files
+# =========================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# =========================================================================
+# Logs, Temp, and Debug Files
+# =========================================================================
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+crash-dumps/
+
+# User-requested log file exclusion (specifically OTP/generated logs)
+otp_text_log.txt
+otp_text_log*.txt
+*_log.txt
+
+# =========================================================================
+# PDFs (User Exclusion Request)
+# =========================================================================
+# Ignore all PDF files from tracking (not required for runtime execution)
+*.pdf
+
+# =========================================================================
+# Environments, Keyrings and Secrets
+# =========================================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.pem
+*.key
+*.pub
+*.p12
+*.jks
+
+# =========================================================================
+# User Uploads & Dynamic Runtime Assets
+# =========================================================================
+# Ignore any user-uploaded files or dynamic media at runtime
+/uploads/*
+
+# Allow tracking of specific seed/demo images required for initial database seed
+!/uploads/products/
