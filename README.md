@@ -2,90 +2,170 @@
 
 EdKart is a robust, production-ready e-commerce REST API backend built with **Spring Boot** and **Java 26**. It provides the core business logic and database layer for an online storefront, featuring catalog search, shopping carts, order workflows, and customer reviews.
 
+---
+
 ## 🚀 Key Features
 
-* **Product Catalog**: Full CRUD support for products, multiple categories, and dynamic image mappings.
-* **Advanced Filtering & Search**: Structured search filtering powered by **Spring Data JPA Specifications** (allows matching by brand, category, price ranges, and ratings dynamically).
-* **Order Management System**: End-to-end checkout APIs handling orders, order items, and quantity tracking.
-* **Customer Reviews**: Dynamic product rating calculation based on user feedback and reviews.
-* **Secured Endpoints**: Configured with **Spring Security** to restrict admin operations and protect user data.
-* **Database Auto-Seeding**: Automatically seeds the MySQL database with demo products and images on first startup for immediate testing.
+- **Product Catalog:** Full CRUD support for products, multiple categories, and dynamic image mappings.
+- **Advanced Filtering & Search:** Structured search filtering powered by **Spring Data JPA Specifications**, allowing filtering by brand, category, price range, and ratings.
+- **Order Management:** Complete checkout workflow with order creation, order items, and quantity tracking.
+- **Customer Reviews:** Dynamic product rating calculation based on customer feedback.
+- **Spring Security:** Secured REST APIs with role-based authorization for administrators and users.
+- **Database Auto-Seeding:** Automatically populates the MySQL database with sample products and images during the first application startup.
+
+---
 
 ## 🛠️ Technology Stack
 
-* **Language**: Java 26
-* **Framework**: Spring Boot 3.x (Web MVC, JPA, Security, Validation)
-* **Database**: MySQL 8.x
-* **Build Tool**: Apache Maven (Wrapper included)
+- **Language:** Java 26
+- **Framework:** Spring Boot 3.x
+  - Spring Web MVC
+  - Spring Data JPA
+  - Spring Security
+  - Spring Validation
+- **Database:** MySQL 8.x
+- **Build Tool:** Apache Maven (Maven Wrapper Included)
+
+---
 
 ## 📐 Architecture Flow
 
 ```mermaid
 graph TD
     Client[Client / Frontend Application] -->|HTTP Requests| Security[Spring Security Filter Chain]
-    Security -->|Authorize Request| Controller[Spring Boot Controllers]
-    Controller -->|DTO Data Transfer| Service[Spring Service Layer]
-    Service -->|Business Logic| Repository[Spring Data JPA Repositories]
-    Repository -->|SQL Queries| db | MySQL Database
+    Security -->|Authorize Request| Controller[Spring Boot REST Controllers]
+    Controller -->|DTO Mapping| Service[Service Layer]
+    Service -->|Business Logic| Repository[Spring Data JPA Repository]
+    Repository -->|SQL Queries| DB[(MySQL Database)]
+```
 
-📂 Project Structure
+---
 
-    edkart/
+## 📂 Project Structure
+
+```text
+edkart/
 │
 ├── .mvn/                                # Maven wrapper configuration
-├── src/main/java/com/edcode/edkart/
-│   ├── config/                          # Security & Web configuration
-│   ├── controller/                      # REST API Endpoints
-│   ├── dto/                             # Data Transfer Objects
-│   ├── entity/                          # JPA Entities / Models
-│   ├── repository/                      # JPA Database Repositories
-│   ├── seed/                            # Database auto-seed implementation
-│   ├── services/                        # Business Logic implementation
-│   └── spec/                            # JPA Specifications for advanced search
+├── src/
+│   └── main/
+│       ├── java/com/edcode/edkart/
+│       │   ├── config/                  # Security & Web Configuration
+│       │   ├── controller/              # REST Controllers
+│       │   ├── dto/                     # Data Transfer Objects
+│       │   ├── entity/                  # JPA Entities
+│       │   ├── repository/              # Spring Data JPA Repositories
+│       │   ├── seed/                    # Database Seeder
+│       │   ├── services/                # Business Logic
+│       │   └── spec/                    # JPA Specifications
+│       │
+│       └── resources/
+│           ├── application.properties   # Configuration
+│           ├── static/
+│           └── templates/
 │
-├── src/main/resources/
-│   ├── application.properties           # Database & server configurations
-│   ├── static/                          # Static web assets (placeholder)
-│   └── templates/                       # Web templates (placeholder)
+├── uploads/
+│   └── products/                        # Product Images
 │
-├── uploads/                             # Product images & user-uploaded media
-│   └── products/                        # Essential seed product images
-│
-├── mvnw                                 # Maven wrapper execution script (Unix)
-├── mvnw.cmd                             # Maven wrapper execution script (Windows)
-└── pom.xml                              # Maven project dependency configuration
+├── mvnw
+├── mvnw.cmd
+└── pom.xml
+```
 
-📦 Getting Started
-Prerequisites
-Java 26 JDK
-MySQL Server (running locally or via Docker)
-Environment Variables
-Configure your database credentials in your environment or update src/main/resources/application.properties:
+---
 
-properties
+## 📦 Getting Started
 
+### Prerequisites
 
+- Java 26 JDK
+- MySQL Server (Local or Docker)
+- Apache Maven (Optional, Maven Wrapper Included)
+
+---
+
+## ⚙️ Environment Configuration
+
+Update your database configuration in:
+
+`src/main/resources/application.properties`
+
+```properties
 spring.datasource.url=jdbc:mysql://${MYSQL_HOST:localhost}:3306/edkart
 spring.datasource.username=YOUR_MYSQL_USERNAME
 spring.datasource.password=YOUR_MYSQL_PASSWORD
-Installation & Run
-Clone the repository:
+```
 
-bash
+---
 
+## ▶️ Installation & Run
 
-git clone https://github.com/your-username/edkart.git
-cd edkart
-Build the project using Maven Wrapper:
+### 1. Clone the Repository
 
-bash
+```bash
+git clone https://github.com/EsakkiDurai5602/Springboot_Ecommerce_Project_Edkart.git
+cd Springboot_Ecommerce_Project_Edkart
+```
 
+### 2. Build the Project
 
+Linux/macOS
+
+```bash
 ./mvnw clean package
-Run the application:
+```
 
-bash
+Windows
 
+```cmd
+mvnw.cmd clean package
+```
 
+### 3. Run the Application
+
+Linux/macOS
+
+```bash
 ./mvnw spring-boot:run
-The backend server will start on port 8080.
+```
+
+Windows
+
+```cmd
+mvnw.cmd spring-boot:run
+```
+
+---
+
+## 🌐 Server
+
+The application starts on:
+
+```
+http://localhost:8080
+```
+
+---
+
+## 🔒 Security
+
+- Spring Security
+- Role-Based Authorization
+- Protected REST Endpoints
+- Input Validation
+- Exception Handling
+
+---
+
+## 📚 Core Technologies
+
+- Java 26
+- Spring Boot
+- Spring Web MVC
+- Spring Data JPA
+- Spring Security
+- MySQL
+- Maven
+- JPA Specifications
+- Bean Validation
+- RESTful APIs
