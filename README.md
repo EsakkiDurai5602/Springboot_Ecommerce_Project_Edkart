@@ -26,7 +26,7 @@ graph TD
     Security -->|Authorize Request| Controller[Spring Boot Controllers]
     Controller -->|DTO Data Transfer| Service[Spring Service Layer]
     Service -->|Business Logic| Repository[Spring Data JPA Repositories]
-    Repository -->|SQL Queries| DB MySQL Database
+    Repository -->|SQL Queries| db | MySQL Database
 
 📂 Project Structure
 
