@@ -1,32 +1,37 @@
-# EdKart Backend API
+# Internet Banking System API
 
-EdKart is a robust, production-ready e-commerce REST API backend built with **Spring Boot** and **Java 26**. It provides the core business logic and database layer for an online storefront, featuring catalog search, shopping carts, order workflows, and customer reviews.
+The Internet Banking System is a secure, transaction-ready financial REST API backend and frontend application built with **Spring Boot**, **Java 26**, and **React**. It provides the core financial services, multi-factor authentication, account management, and real-time transaction processing for digital banking.
 
 ## 🚀 Key Features
 
-* **Product Catalog**: Full CRUD support for products, multiple categories, and dynamic image mappings.
-* **Advanced Filtering & Search**: Structured search filtering powered by **Spring Data JPA Specifications** (allows matching by brand, category, price ranges, and ratings dynamically).
-* **Order Management System**: End-to-end checkout APIs handling orders, order items, and quantity tracking.
-* **Customer Reviews**: Dynamic product rating calculation based on user feedback and reviews.
-* **Secured Endpoints**: Configured with **Spring Security** to restrict admin operations and protect user data.
-* **Database Auto-Seeding**: Automatically seeds the MySQL database with demo products and images on first startup for immediate testing.
+* **Multi-Factor Security**: Multi-factor authentication via automated email-based One-Time Passwords (OTP) and stateless JWT-based session security.
+* **Account Management**: Real-time balance checks, multi-type account generation (Savings, Checking), and full transaction statements.
+* **Secure Fund Transfers**: Transaction-level checks for internal and external transfers with historical state tracking and auditing.
+* **Beneficiary Directory**: Add, update, and manage payees with detailed account numbers and IFSC tracking for rapid transfers.
+* **Fixed Deposits (FD)**: Term-deposit creation, live interest calculation, and automatic maturity calculations.
+* **Automated Mailing Engine**: Instant email updates sent to customers for successful registrations, logins, security changes, and transaction completions.
 
 ## 🛠️ Technology Stack
 
-* **Language**: Java 26
-* **Framework**: Spring Boot 3.x (Web MVC, JPA, Security, Validation)
-* **Database**: MySQL 8.x
+* **Frontend**: React.js (Vite), React Router v7, Axios, Custom CSS
+* **Backend Framework**: Spring Boot 3.x (Web MVC, Data JPA, Security, Validation, Mail)
+* **Database**: PostgreSQL (JPA & Hibernate ORM)
 * **Build Tool**: Apache Maven (Wrapper included)
 
 ## 📦 Getting Started
 
 ### Prerequisites
 * Java 26 JDK
-* MySQL Server (running locally or via Docker)
+* Node.js (v18 or higher)
+* PostgreSQL Server (running locally or remotely)
 
 ### Environment Variables
-Configure your database credentials in your environment or update `src/main/resources/application.properties`:
+Configure your database and mail credentials in your environment or update `src/main/resources/application.properties`:
 ```properties
-spring.datasource.url=jdbc:mysql://${MYSQL_HOST:localhost}:3306/edkart
-spring.datasource.username=YOUR_MYSQL_USERNAME
-spring.datasource.password=YOUR_MYSQL_PASSWORD
+spring.datasource.url=jdbc:postgresql://localhost:5432/internet_banking
+spring.datasource.username=YOUR_POSTGRES_USERNAME
+spring.datasource.password=YOUR_POSTGRES_PASSWORD
+
+# Mail Service Configurations
+spring.mail.username=YOUR_GMAIL_USERNAME
+spring.mail.password=YOUR_APP_SPECIFIC_PASSWORD
