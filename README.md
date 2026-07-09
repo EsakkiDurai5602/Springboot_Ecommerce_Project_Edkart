@@ -28,7 +28,7 @@ graph TD
     Service -->|Business Logic| Repository[Spring Data JPA Repositories]
     Repository -->|SQL Queries| DB[(MySQL Database)]
 
-## 📂 Project Structure
+📂 Project Structure
 
     edkart/
 │
