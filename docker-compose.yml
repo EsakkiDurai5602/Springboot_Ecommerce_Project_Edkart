@@ -9,11 +9,9 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       # Exposes database port. If database is only accessed internally, remove port binding.
-      - "${DB_PORT_BINDING:-3306}:3306"
+      - "${DB_PORT_BINDING:-3307}:3306"
     volumes:
       # Persistent storage volume for MySQL database tables and files
       - mysql-data:/var/lib/mysql
@@ -21,7 +19,8 @@ services:
       - edkart-network
     healthcheck:
       # Ensures container is healthy only when MySQL is ready to accept connections
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      # Uses the root user and root password to check database availability
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +36,7 @@ services:
     container_name: edkart-app
     restart: always
     ports:
-      - "${SERVER_PORT_BINDING:-8080}:8080"
+      - "${SERVER_PORT_BINDING:-8085}:8085"
     environment:
       # Inject active Spring profiles
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}

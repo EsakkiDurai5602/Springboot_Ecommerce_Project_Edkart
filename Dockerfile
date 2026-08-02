@@ -44,14 +44,14 @@ RUN apt-get update && \
 # Copy the compiled JAR from Stage 1 builder
 COPY --from=builder /app/target/edkart-0.0.1-SNAPSHOT.jar app.jar
 
-# Create an uploads folder inside the container with proper user ownership
-RUN mkdir -p /app/uploads && chown -R springapp:springgroup /app
+# Create uploads and logs folders inside the container with proper user ownership
+RUN mkdir -p /app/uploads /app/logs && chown -R springapp:springgroup /app/logs /app/uploads /app/app.jar /app
 
 # Switch to the non-root user
 USER springapp
 
 # Expose default application port
-EXPOSE 8080
+EXPOSE 8085
 
 # Environment variables for default execution tuning
 ENV SPRING_PROFILES_ACTIVE=prod
@@ -76,4 +76,4 @@ ENTRYPOINT ["java", \
 # Actuator-based Health Check
 # Checks health status every 30s. Marks container unhealthy if response code is not 200.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+  CMD curl -f http://localhost:8085/actuator/health || exit 1
