@@ -10,6 +10,7 @@ import com.edcode.edkart.repository.OrderRepository;
 import com.edcode.edkart.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -21,6 +22,7 @@ public class OrderServices {
     @Autowired
     public OrderRepository orderRepository;
 
+    @Transactional
     public OrderCreated createOrder(CreateOrderList orderList){
         Order order = new Order();
         Double totalItemAmount=0.0;

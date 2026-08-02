@@ -1,0 +1,28 @@
+# Exclude local build artifacts and target directories
+target/
+*.jar
+*.war
+
+# Exclude IDE and metadata files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project/
+.classpath/
+.git/
+.gitignore
+.gitattributes
+
+# Exclude environment configuration and secrets
+.env
+.env.example
+docker-compose.yml
+Dockerfile
+*.md
+
+# Exclude helper scripts
+mvnw
+mvnw.cmd
+.mvn/
+uploads/

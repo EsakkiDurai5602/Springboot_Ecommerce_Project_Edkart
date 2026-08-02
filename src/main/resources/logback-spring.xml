@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Define the base directory for logging -->
+    <property name="LOGS_DIR" value="logs" />
+
+    <!-- ========================================================================= -->
+    <!-- CONSOLE APPENDER (Colorized output for development/orchestration stdout) -->
+    <!-- ========================================================================= -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ========================================================================= -->
+    <!-- APPLICATION FILE APPENDER (Rolling, Daily logs, Max Size 10MB) -->
+    <!-- ========================================================================= -->
+    <appender name="APPLICATION_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_DIR}/app.log</file>
+        
+        <!-- Log rollover policy -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Daily rollover with date pattern and index -->
+            <fileNamePattern>${LOGS_DIR}/archived/app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- Max file size before creating a new chunk -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- Maintain logs for up to 30 days -->
+            <maxHistory>30</maxHistory>
+            <!-- Caps the total size of all archived files combined at 2GB -->
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ========================================================================= -->
+    <!-- ERROR FILE APPENDER (Intercepts ERROR level logs specifically) -->
+    <!-- ========================================================================= -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_DIR}/error.log</file>
+        
+        <!-- Only record logs with severity level equal or greater than ERROR -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS_DIR}/archived/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ========================================================================= -->
+    <!-- LOGGER LEVEL DECORATIONS -->
+    <!-- ========================================================================= -->
+    <!-- Base log configuration for production -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="APPLICATION_FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+        
+        <!-- Overrides to restrict noise from frameworks in production -->
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.hibernate" level="WARN" />
+        <logger name="com.zaxxer.hikari" level="WARN" />
+    </springProfile>
+
+    <!-- Base log configuration for development -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="APPLICATION_FILE" />
+        </root>
+        
+        <!-- Verbose logging for debugging SQL inputs locally -->
+        <logger name="org.hibernate.SQL" level="DEBUG" />
+        <logger name="org.springframework.web" level="INFO" />
+    </springProfile>
+
+</configuration>

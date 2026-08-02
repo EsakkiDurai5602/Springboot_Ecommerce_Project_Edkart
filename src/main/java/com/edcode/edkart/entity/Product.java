@@ -151,15 +151,10 @@ public class Product {
     public void setNumOfReviews(Integer numOfReviews) {
         this.numOfReviews = numOfReviews;
     }
-
-    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true)
-    @JoinColumn(name = "product_id")
     public void setImages(List<ProductImage> images) {
         this.images = images;
     }
 
-    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true)
-    @JoinColumn(name = "product_id")
     public void setReviews(List<ProductReview> reviews) {
         this.reviews = reviews;
     }

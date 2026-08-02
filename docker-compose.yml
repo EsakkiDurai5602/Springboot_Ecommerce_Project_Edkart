@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # MySQL DATABASE SERVICE
+  # ==========================================
+  db:
+    image: mysql:8.0
+    container_name: edkart-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      # Exposes database port. If database is only accessed internally, remove port binding.
+      - "${DB_PORT_BINDING:3306}:3306"
+    volumes:
+      # Persistent storage volume for MySQL database tables and files
+      - mysql-data:/var/lib/mysql
+    networks:
+      - edkart-network
+    healthcheck:
+      # Ensures container is healthy only when MySQL is ready to accept connections
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ==========================================
+  # SPRING BOOT E-COMMERCE APPLICATION
+  # ==========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edkart-app
+    restart: always
+    ports:
+      - "${SERVER_PORT_BINDING:8080}:8080"
+    environment:
+      # Inject active Spring profiles
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:prod}
+      
+      # Database Connections
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      # Connection Pool Tuning
+      DB_MAX_POOL_SIZE: ${DB_MAX_POOL_SIZE:20}
+      DB_MIN_IDLE: ${DB_MIN_IDLE:5}
+      
+      # Tomcat Tuning
+      TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:200}
+      TOMCAT_MIN_THREADS: ${TOMCAT_MIN_THREADS:20}
+      
+      # Spring Security JWT & CORS placeholders
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:*}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:86400000}
+      
+      # File Uploads Directory inside the container
+      UPLOADS_DIR: /app/uploads/
+      
+      # Third Party Integrations
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      
+      # Mail Integration
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    volumes:
+      # Persistent storage volume for user-uploaded product assets
+      - uploads-data:/app/uploads
+      # Bind mounts the container logging folder if rolling to files on host
+      - app-logs:/app/logs
+    depends_on:
+      db:
+        # Prevent app container from starting before db passes healthcheck
+        condition: service_healthy
+    networks:
+      - edkart-network
+
+  # ==========================================
+  # PHPMYADMIN (DATABASE ADMINISTRATION TOOL)
+  # ==========================================
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: edkart-pma
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USERNAME}
+      PMA_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${PMA_PORT_BINDING:8081}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - edkart-network
+
+# ==========================================
+# NETWORKS & PERSISTENT VOLUMES
+# ==========================================
+networks:
+  edkart-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  uploads-data:
+    driver: local
+  app-logs:
+    driver: local

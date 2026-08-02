@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ public class ProductServices {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void addReview(ProductReviewDto productReviewDto) {
         Product product = productRepository.findById(productReviewDto.getId()).orElseThrow(() -> new RuntimeException("Product not found"));
         ProductReview productReview = new ProductReview();
@@ -67,6 +69,7 @@ public class ProductServices {
         productRepository.save(product);
     }
 
+    @Transactional
     public void deleteReview(Long reviewId) {
         ProductReview review = productReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new RuntimeException("Review not found"));
