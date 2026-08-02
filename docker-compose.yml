@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==========================================
   # MySQL DATABASE SERVICE
@@ -15,7 +13,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       # Exposes database port. If database is only accessed internally, remove port binding.
-      - "${DB_PORT_BINDING:3306}:3306"
+      - "${DB_PORT_BINDING:-3306}:3306"
     volumes:
       # Persistent storage volume for MySQL database tables and files
       - mysql-data:/var/lib/mysql
@@ -39,10 +37,10 @@ services:
     container_name: edkart-app
     restart: always
     ports:
-      - "${SERVER_PORT_BINDING:8080}:8080"
+      - "${SERVER_PORT_BINDING:-8080}:8080"
     environment:
       # Inject active Spring profiles
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:prod}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       
       # Database Connections
       DB_HOST: db
@@ -52,17 +50,17 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       
       # Connection Pool Tuning
-      DB_MAX_POOL_SIZE: ${DB_MAX_POOL_SIZE:20}
-      DB_MIN_IDLE: ${DB_MIN_IDLE:5}
+      DB_MAX_POOL_SIZE: ${DB_MAX_POOL_SIZE:-20}
+      DB_MIN_IDLE: ${DB_MIN_IDLE:-5}
       
       # Tomcat Tuning
-      TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:200}
-      TOMCAT_MIN_THREADS: ${TOMCAT_MIN_THREADS:20}
+      TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:-200}
+      TOMCAT_MIN_THREADS: ${TOMCAT_MIN_THREADS:-20}
       
       # Spring Security JWT & CORS placeholders
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:*}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION: ${JWT_EXPIRATION:86400000}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       
       # File Uploads Directory inside the container
       UPLOADS_DIR: /app/uploads/
@@ -107,7 +105,7 @@ services:
       PMA_USER: ${DB_USERNAME}
       PMA_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${PMA_PORT_BINDING:8081}:80"
+      - "${PMA_PORT_BINDING:-8081}:80"
     depends_on:
       db:
         condition: service_healthy
