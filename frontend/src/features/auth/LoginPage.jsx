@@ -56,7 +56,7 @@ export const LoginPage = () => {
               Sign In to EdKart
             </h2>
             <p className="text-xs text-slate-500">
-              Enter your credentials to access your customer account or admin management
+              Access your account, orders, and personalized tech drops
             </p>
           </div>
 
@@ -69,9 +69,9 @@ export const LoginPage = () => {
           {/* Simple Unified Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Email or Username"
+              label="Email Address"
               type="text"
-              placeholder="user@edkart.com or admin"
+              placeholder="alex@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail className="w-4 h-4" />}
