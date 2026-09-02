@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dark body {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+/* Custom Scrollbar for sleek fintech look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Card gradient patterns */
+.card-gradient-titanium {
+  background: linear-gradient(135deg, #0A192F 0%, #1E293B 50%, #0F172A 100%);
+}
+
+.card-gradient-sapphire {
+  background: linear-gradient(135deg, #034694 0%, #0284C7 50%, #06B6D4 100%);
+}
+
+.card-gradient-gold {
+  background: linear-gradient(135deg, #78350F 0%, #B45309 50%, #D97706 100%);
+}
+
+.card-gradient-emerald {
+  background: linear-gradient(135deg, #064E3B 0%, #059669 50%, #10B981 100%);
+}
+
+.card-gradient-purple {
+  background: linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #A855F7 100%);
+}
+
+.card-gradient-rose {
+  background: linear-gradient(135deg, #881337 0%, #E11D48 50%, #FB7185 100%);
+}

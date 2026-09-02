@@ -1,93 +1,109 @@
-# EdKart Backend API
+# EdKart Enterprise Internet Banking & Financial Platform
 
-EdKart is a robust, production-ready e-commerce REST API backend built with **Spring Boot** and **Java 26**. It provides the core business logic and database layer for an online storefront, featuring catalog search, shopping carts, order workflows, and customer reviews.
+A full-stack, enterprise-grade digital banking and financial platform consisting of a Spring Boot REST API backend and a responsive, secure React JSX frontend with complete NetBanking capabilities, role-based Admin Portal, and Dockerized AWS deployment architecture.
 
-## 🚀 Key Features
+---
 
-* **Product Catalog**: Full CRUD support for products, multiple categories, and dynamic image mappings.
-* **Advanced Filtering & Search**: Structured search filtering powered by **Spring Data JPA Specifications** (allows matching by brand, category, price ranges, and ratings dynamically).
-* **Order Management System**: End-to-end checkout APIs handling orders, order items, and quantity tracking.
-* **Customer Reviews**: Dynamic product rating calculation based on user feedback and reviews.
-* **Secured Endpoints**: Configured with **Spring Security** to restrict admin operations and protect user data.
-* **Database Auto-Seeding**: Automatically seeds the MySQL database with demo products and images on first startup for immediate testing.
+## 🏛️ Project Architecture
 
-## 🛠️ Technology Stack
-
-* **Language**: Java 26
-* **Framework**: Spring Boot 3.x (Web MVC, JPA, Security, Validation)
-* **Database**: MySQL 8.x
-* **Build Tool**: Apache Maven (Wrapper included)
-
-## 📐 Architecture Flow
-
-```mermaid
-graph TD
-    Client[Client / Frontend Application] -->|HTTP Requests| Security[Spring Security Filter Chain]
-    Security -->|Authorize Request| Controller[Spring Boot Controllers]
-    Controller -->|DTO Data Transfer| Service[Spring Service Layer]
-    Service -->|Business Logic| Repository[Spring Data JPA Repositories]
-    Repository -->|SQL Queries| DB[(MySQL Database)]
+```
+d:\SpringBoot\edkart/
+├── backend/                       # Spring Boot 4 REST API, JPA & Security
+│   ├── src/main/java/             # Controllers, Entities, Repositories, DTOs
+│   ├── src/main/resources/        # application.properties & profiles
+│   ├── Dockerfile                 # Multi-stage JDK 21 Alpine container
+│   ├── pom.xml                    # Maven dependencies
+│   └── mvnw / mvnw.cmd            # Maven wrappers
+├── frontend/                      # React 18 + Vite + Tailwind CSS + Lucide
+│   ├── src/                       # JSX Components, Features, Layouts, Contexts
+│   │   ├── assets/                # Visual cards, vaults, loans & security illustrations
+│   │   ├── components/ui/         # 18 Reusable accessible design system components
+│   │   ├── components/layout/     # AppShell, AdminLayout, Topbar, Sidebar, MobileNav
+│   │   ├── context/               # AuthContext, BankingContext, ThemeContext, ToastContext
+│   │   ├── features/              # Feature modules (User NetBanking & Admin Portal)
+│   │   ├── services/              # API Client & banking state services
+│   │   └── tests/                 # Vitest & React Testing Library test suites
+│   ├── Dockerfile                 # Multi-stage Node.js build -> Nginx SPA image
+│   ├── nginx-frontend.conf        # Nginx SPA router & backend reverse proxy
+│   └── package.json               # Pure JavaScript JSX dependencies & scripts
+├── docker-compose.yml             # Root multi-container orchestration (MySQL, Backend, Frontend)
+├── AWS_Deployment_Guide.md        # Comprehensive EC2 + DuckDNS + SSL deployment guide
+└── nginx.conf                     # Host-level Nginx SSL reverse proxy
 ```
 
-## 📂 Project Structure
+---
 
-```text
-edkart/
-│
-├── .mvn/                                # Maven wrapper configuration
-├── src/main/java/com/edcode/edkart/
-│   ├── config/                          # Security & Web configuration
-│   ├── controller/                      # REST API Endpoints
-│   ├── dto/                             # Data Transfer Objects
-│   ├── entity/                          # JPA Entities / Models
-│   ├── repository/                      # JPA Database Repositories
-│   ├── seed/                            # Database auto-seed implementation
-│   ├── services/                        # Business Logic implementation
-│   └── spec/                            # JPA Specifications for advanced search
-│
-├── src/main/resources/
-│   ├── application.properties           # Database & server configurations
-│   ├── static/                          # Static web assets (placeholder)
-│   └── templates/                       # Web templates (placeholder)
-│
-├── uploads/                             # Product images & user-uploaded media
-│   └── products/                        # Essential seed product images
-│
-├── mvnw                                 # Maven wrapper execution script (Unix)
-├── mvnw.cmd                             # Maven wrapper execution script (Windows)
-└── pom.xml                              # Maven project dependency configuration
+## 🌟 Key Features
+
+### 👤 Customer NetBanking Portal
+- **Financial Dashboard**: Real-time total balance, hide/reveal toggle, quick transfers, category spending analysis, and recent activity feed.
+- **Account Management**: Savings, Current, and Fixed Deposit accounts with masked numbers, branch details, and statement generator.
+- **Domestic Transfers**: Instant 24/7 IMPS, NEFT, and RTGS transfers with double-submit protection, review modal, and 2FA OTP authorization.
+- **Beneficiaries Directory**: Register new payees with IFSC validation, daily limits, and instant transfer actions.
+- **Bill Payments**: 7 Biller categories (Electricity, Mobile, Broadband, Water, Gas, Credit Cards, Insurance) with bill fetch and instant receipts.
+- **Cards Management**: 3D visual card renders (Titanium Elite, Sapphire Reserve, Virtual Shield), freeze/unfreeze toggle, daily limit slider, PIN reset, and lost card reporting.
+- **Loans & EMI Calculator**: Outstanding balances, repayment progress, digital loan applications, and interactive principal/interest calculator.
+- **e-Documents**: Download monthly PDF statements, tax certificates, and deposit receipts.
+- **Security Center**: Password update, 2FA toggle, and active session audit across devices.
+
+### 🛡️ Operations Admin Portal (`ROLE_ADMIN`)
+- **Product Catalog CRUD**: Add, edit, and delete banking products with custom image URLs, interest rates, minimum balances, and feature tags.
+- **Customer KYC Pipeline**: Approve or reject pending PAN/Aadhaar identity verifications, lock or unlock account NetBanking access.
+- **Transaction Oversight**: Real-time surveillance of all system transactions with high-value transfer tags (> ₹1,00,000).
+- **Dispute Resolution Desk**: View and reply to customer transaction dispute tickets and update resolution statuses.
+- **Security Audit Logs**: Cryptographic audit logs with timestamp, IP address, and operation status.
+
+### 🌓 Day / Night Themes
+- Instant toggle between **Light Slate** and **Dark Navy** fintech color palettes.
+
+---
+
+## 🔑 Demo Login Credentials
+
+| Role | Email / User ID | Password | Access Level |
+|---|---|---|---|
+| **Bank Customer** | `durai@edkart.com` | `Password@123` | Full NetBanking Portal |
+| **Bank Administrator** | `admin@edkart.com` | `Admin@123` | Full Operations Admin Console |
+| **Locked Account** | `locked@edkart.com` | *Any* | Demonstrates security lock state |
+
+*(Use the 1-click **Customer Demo** or **Admin Console** buttons on the Login page for instant login)*
+
+---
+
+## 🚀 Local Development Setup
+
+### 1. Run Frontend (React + Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Access at `http://localhost:3000`.
+
+### 2. Run Tests
+```bash
+cd frontend
+npm run test
 ```
 
-## 📦 Getting Started
-
-### Prerequisites
-* Java 26 JDK
-* MySQL Server (running locally or via Docker)
-
-### Environment Variables
-Configure your database credentials in your environment or update `src/main/resources/application.properties`:
-```properties
-spring.datasource.url=jdbc:mysql://${MYSQL_HOST:localhost}:3306/edkart
-spring.datasource.username=YOUR_MYSQL_USERNAME
-spring.datasource.password=YOUR_MYSQL_PASSWORD
+### 3. Production Build
+```bash
+cd frontend
+npm run build
 ```
 
-### Installation & Run
+---
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/edkart.git
-   cd edkart
-   ```
+## 🐳 Docker Multi-Container Deployment
 
-2. Build the project using Maven Wrapper:
-   ```bash
-   ./mvnw clean package
-   ```
+Run the complete stack (MySQL 8, Spring Boot Backend, and React Frontend):
+```bash
+docker compose up --build -d
+```
+Access the application at `http://localhost`.
 
-3. Run the application:
-   ```bash
-   ./mvnw spring-boot:run
-   ```
+---
 
-The backend server will start on port `8080`.
+## ☁️ AWS EC2 & DuckDNS Deployment
+
+Refer to [`AWS_Deployment_Guide.md`](./AWS_Deployment_Guide.md) for full instructions on launching on Ubuntu EC2 with DuckDNS and Let's Encrypt SSL.
