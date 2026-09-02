@@ -19,6 +19,8 @@ import {
   Image as ImageIcon,
   Search,
   CheckCircle2,
+  X,
+  Upload,
 } from 'lucide-react';
 
 export const AdminProductsPage = () => {
@@ -38,7 +40,10 @@ export const AdminProductsPage = () => {
     seller: 'EdKart Authorized Seller',
     stock: 20,
     description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
+    images: [
+      '/assets/products/iphone16_pro.jpg',
+      'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
+    ],
     badge: 'Popular',
   });
 
@@ -61,7 +66,10 @@ export const AdminProductsPage = () => {
       seller: 'EdKart Authorized Store',
       stock: 25,
       description: 'Premium flagship device with pro performance and battery life.',
-      imageUrl: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
+      images: [
+        '/assets/products/iphone16_pro.jpg',
+        'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
+      ],
       badge: 'New Launch',
     });
     setError(null);
@@ -70,6 +78,11 @@ export const AdminProductsPage = () => {
 
   const handleOpenEdit = (prod) => {
     setEditingProduct(prod);
+    const existingImages =
+      prod.images && prod.images.length > 0
+        ? prod.images.map((img) => (typeof img === 'string' ? img : img.url))
+        : [CATEGORY_FALLBACK_IMAGES[prod.category] || CATEGORY_FALLBACK_IMAGES.default];
+
     setFormData({
       name: prod.name,
       price: prod.price,
@@ -78,11 +91,37 @@ export const AdminProductsPage = () => {
       seller: prod.seller || '',
       stock: prod.stock || 10,
       description: prod.description || '',
-      imageUrl: prod.images?.[0]?.url || '',
+      images: existingImages.slice(0, 5),
       badge: prod.badge || '',
     });
     setError(null);
     setIsModalOpen(true);
+  };
+
+  const handleAddImageUrl = () => {
+    if (formData.images.length >= 5) {
+      setError('You can add up to 5 images per product.');
+      return;
+    }
+    setFormData({
+      ...formData,
+      images: [...formData.images, ''],
+    });
+  };
+
+  const handleImageChange = (index, value) => {
+    const updated = [...formData.images];
+    updated[index] = value;
+    setFormData({ ...formData, images: updated });
+  };
+
+  const handleRemoveImage = (index) => {
+    if (formData.images.length <= 1) {
+      setError('At least 1 product image is required.');
+      return;
+    }
+    const updated = formData.images.filter((_, i) => i !== index);
+    setFormData({ ...formData, images: updated });
   };
 
   const handleSubmit = async (e) => {
@@ -92,18 +131,27 @@ export const AdminProductsPage = () => {
       return;
     }
 
+    const validImages = formData.images.filter((img) => img && img.trim().length > 0);
+    if (validImages.length === 0) {
+      setError('Please provide at least one valid image URL.');
+      return;
+    }
+
     const payload = {
       ...formData,
-      images: [formData.imageUrl],
+      price: Number(formData.price),
+      originalPrice: formData.originalPrice ? Number(formData.originalPrice) : Number(formData.price) * 1.15,
+      stock: Number(formData.stock) || 10,
+      images: validImages,
     };
 
     try {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, payload);
-        setSuccessMsg(`Updated ${formData.name}`);
+        setSuccessMsg(`Updated "${formData.name}"`);
       } else {
         await productService.createProduct(payload);
-        setSuccessMsg(`Added ${formData.name} to store inventory`);
+        setSuccessMsg(`Added "${formData.name}" to store inventory`);
       }
       setIsModalOpen(false);
       await loadProducts();
@@ -137,7 +185,7 @@ export const AdminProductsPage = () => {
             Product Inventory Management (CRUD)
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Add new products, manage image URLs, adjust stock quantities, and update catalog pricing
+            Add new products, upload up to 5 multi-angle image URLs, adjust stock levels, and update catalog pricing
           </p>
         </div>
 
@@ -162,68 +210,77 @@ export const AdminProductsPage = () => {
 
       {/* Products Table */}
       <Card variant="default">
-        <Table headers={['Product Information', 'Category', 'Price', 'Stock Level', 'Rating', 'Actions']}>
-          {filtered.map((p) => (
-            <TableRow key={p.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={getProductImageUrl(p)}
-                    alt={p.name}
-                    onError={(e) => {
-                      e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
-                    }}
-                    className="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{p.name}</h4>
-                    <span className="text-[10px] text-slate-400">Seller: {p.seller}</span>
+        <Table headers={['Product (Up to 5 Images)', 'Category', 'Selling Price', 'Stock Level', 'Customer Rating', 'Actions']}>
+          {filtered.map((p) => {
+            const imgCount = p.images?.length || 1;
+            return (
+              <TableRow key={p.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 border border-slate-200 dark:border-slate-700">
+                      <img
+                        src={getProductImageUrl(p)}
+                        alt={p.name}
+                        onError={(e) => {
+                          e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute bottom-0.5 right-0.5 bg-slate-900/80 text-white text-[9px] font-bold px-1 rounded-md">
+                        📷 {imgCount}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-xs">{p.name}</h4>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Seller: {p.seller || 'EdKart Verified'}</span>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
+                </TableCell>
 
-              <TableCell>
-                <Badge variant="brand" size="sm">
-                  {p.category}
-                </Badge>
-              </TableCell>
+                <TableCell>
+                  <Badge variant="brand" size="sm">
+                    {p.category}
+                  </Badge>
+                </TableCell>
 
-              <TableCell className="font-mono text-xs font-bold text-slate-900 dark:text-white">
-                {formatCurrency(p.price)}
-              </TableCell>
+                <TableCell className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                  {formatCurrency(p.price)}
+                </TableCell>
 
-              <TableCell>
-                <Badge variant={p.stock > 15 ? 'success' : 'danger'} size="sm" dot>
-                  {p.stock} in stock
-                </Badge>
-              </TableCell>
+                <TableCell>
+                  <Badge variant={p.stock > 15 ? 'success' : 'danger'} size="sm" dot>
+                    {p.stock} units in stock
+                  </Badge>
+                </TableCell>
 
-              <TableCell className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                ★ {p.rating} ({p.numOfReviews})
-              </TableCell>
+                <TableCell className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  ★ {p.rating || 4.8} ({p.numOfReviews || 0})
+                </TableCell>
 
-              <TableCell>
-                <div className="flex items-center gap-1.5">
-                  <Button onClick={() => handleOpenEdit(p)} variant="secondary" size="sm" leftIcon={<Edit className="w-3.5 h-3.5" />}>
-                    Edit
-                  </Button>
-                  <Button onClick={() => setDeletingProduct(p)} variant="danger" size="sm" leftIcon={<Trash2 className="w-3.5 h-3.5" />}>
-                    Delete
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                <TableCell>
+                  <div className="flex items-center gap-1.5">
+                    <Button onClick={() => handleOpenEdit(p)} variant="secondary" size="sm" leftIcon={<Edit className="w-3.5 h-3.5" />}>
+                      Edit
+                    </Button>
+                    <Button onClick={() => setDeletingProduct(p)} variant="danger" size="sm" leftIcon={<Trash2 className="w-3.5 h-3.5" />}>
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </Table>
       </Card>
 
-      {/* Add / Edit Product Modal */}
+      {/* Add / Edit Product Modal with Up to 5 Images */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingProduct ? `Edit ${editingProduct.name}` : 'Add New E-Commerce Product'}
-        subtitle="Specify product title, image URL, category, stock, and pricing"
-        maxWidth="max-w-xl"
+        subtitle="Specify product title, up to 5 multi-angle images, category, stock, and pricing"
+        maxWidth="max-w-2xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {error && <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>}
@@ -266,7 +323,7 @@ export const AdminProductsPage = () => {
             />
 
             <Input
-              label="Stock Units"
+              label="Warehouse Stock Units"
               type="number"
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
@@ -275,14 +332,66 @@ export const AdminProductsPage = () => {
             />
           </div>
 
-          <Input
-            label="High-Resolution Image URL"
-            value={formData.imageUrl}
-            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-            placeholder="https://images.unsplash.com/..."
-            leftIcon={<ImageIcon className="w-4 h-4" />}
-            required
-          />
+          {/* Up to 5 Multi-Angle Images Section */}
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
+                  Product Image URLs (Up to 5 Images)
+                </label>
+                <span className="text-[11px] text-slate-400">
+                  Add front, back, and detail angle images for high-res store presentation.
+                </span>
+              </div>
+
+              {formData.images.length < 5 && (
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-3 py-1.5 rounded-xl bg-brand-50 dark:bg-slate-800 text-brand-600 dark:text-amber-400 font-bold text-xs hover:bg-brand-100 flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Image Slot ({formData.images.length}/5)</span>
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2.5">
+              {formData.images.map((imgUrl, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 border border-slate-200 dark:border-slate-700">
+                    <img
+                      src={imgUrl || CATEGORY_FALLBACK_IMAGES.default}
+                      alt={`Angle ${idx + 1}`}
+                      onError={(e) => {
+                        e.target.src = CATEGORY_FALLBACK_IMAGES.default;
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <input
+                    type="text"
+                    value={imgUrl}
+                    onChange={(e) => handleImageChange(idx, e.target.value)}
+                    placeholder={`Image ${idx + 1} URL (e.g. /assets/products/iphone16_pro.jpg or https://images.unsplash.com/...)`}
+                    className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+
+                  {formData.images.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="p-2 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div>
             <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
@@ -297,7 +406,7 @@ export const AdminProductsPage = () => {
           </div>
 
           <Button type="submit" variant="primary" fullWidth size="lg">
-            {editingProduct ? 'Save Changes' : 'Publish Product to Store'}
+            {editingProduct ? 'Save Product Changes' : 'Publish Product with Multi-Images'}
           </Button>
         </form>
       </Modal>

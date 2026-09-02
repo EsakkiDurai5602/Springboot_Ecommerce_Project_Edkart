@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS } from './ecommerceData';
+import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from './ecommerceData';
 import { DEMO_USERS } from '../utils/constants';
 import { generateOrderNumber } from '../utils/formatters';
 
@@ -23,8 +23,9 @@ const setStored = (key, val) => {
 // Initialize persistent storage
 if (!localStorage.getItem('edkart_ec_products')) setStored('products', INITIAL_PRODUCTS);
 if (!localStorage.getItem('edkart_ec_orders')) setStored('orders', INITIAL_ORDERS);
+if (!localStorage.getItem('edkart_ec_users')) setStored('users', INITIAL_USERS);
 
-const delay = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /* ================= PRODUCT SERVICES ================= */
 export const productService = {
@@ -115,27 +116,45 @@ export const productService = {
   createProduct: async (productData) => {
     try {
       const res = await apiClient.post('/products', productData);
-      if (res.data) return normalizeProduct(res.data);
+      if (res.data) {
+        const normalized = normalizeProduct(res.data);
+        const products = getStored('products', INITIAL_PRODUCTS);
+        products.unshift(normalized);
+        setStored('products', products);
+        return normalized;
+      }
     } catch (e) {
       // fallback
     }
 
-    await delay(250);
+    await delay(150);
     const products = getStored('products', INITIAL_PRODUCTS);
+
+    // Format up to 5 images
+    let images = [];
+    if (Array.isArray(productData.images) && productData.images.length > 0) {
+      images = productData.images.slice(0, 5).map((img, i) => ({
+        id: i + 1,
+        url: typeof img === 'string' ? img : img.url || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80',
+      }));
+    } else if (productData.imageUrl) {
+      images = [{ id: 1, url: productData.imageUrl }];
+    } else {
+      images = [{ id: 1, url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80' }];
+    }
+
     const newProd = {
       id: Date.now(),
       name: productData.name,
       price: Number(productData.price),
-      originalPrice: productData.originalPrice ? Number(productData.originalPrice) : Number(productData.price) * 1.15,
+      originalPrice: Number(productData.originalPrice || productData.price * 1.15),
       seller: productData.seller || 'EdKart Verified Merchant',
       description: productData.description || 'Premium quality verified tech product.',
       category: productData.category || 'Electronics',
       stock: Number(productData.stock) || 10,
       rating: 5.0,
       numOfReviews: 0,
-      images: Array.isArray(productData.images)
-        ? productData.images.map((url, i) => ({ id: i, url: typeof url === 'string' ? url : url.url }))
-        : [{ id: 1, url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80' }],
+      images,
       reviews: [],
       featured: !!productData.featured,
       badge: productData.badge || 'New Launch',
@@ -154,11 +173,26 @@ export const productService = {
       // fallback
     }
 
-    await delay(200);
+    await delay(150);
     const products = getStored('products', INITIAL_PRODUCTS);
     const index = products.findIndex((p) => String(p.id) === String(id));
     if (index !== -1) {
-      products[index] = { ...products[index], ...updatedFields };
+      // If images array is provided, format cleanly
+      let images = products[index].images;
+      if (Array.isArray(updatedFields.images)) {
+        images = updatedFields.images.slice(0, 5).map((img, i) => ({
+          id: i + 1,
+          url: typeof img === 'string' ? img : img.url,
+        }));
+      }
+
+      products[index] = {
+        ...products[index],
+        ...updatedFields,
+        price: updatedFields.price !== undefined ? Number(updatedFields.price) : products[index].price,
+        stock: updatedFields.stock !== undefined ? Number(updatedFields.stock) : products[index].stock,
+        images,
+      };
       setStored('products', products);
       return products[index];
     }
@@ -186,7 +220,7 @@ export const productService = {
       // fallback
     }
 
-    await delay(200);
+    await delay(150);
     const products = getStored('products', INITIAL_PRODUCTS);
     const product = products.find((p) => String(p.id) === String(productId));
     if (product) {
@@ -211,8 +245,8 @@ export const productService = {
 const normalizeProduct = (p) => {
   let images = [];
   if (p.images && p.images.length > 0) {
-    images = p.images.map((img, idx) => ({
-      id: idx,
+    images = p.images.slice(0, 5).map((img, idx) => ({
+      id: idx + 1,
       url: typeof img === 'string' ? img : img.url || img.publicId || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80',
     }));
   } else {
@@ -300,7 +334,7 @@ export const orderService = {
       // fallback
     }
 
-    await delay(200);
+    await delay(150);
     const orders = getStored('orders', INITIAL_ORDERS);
     const orderNo = generateOrderNumber();
     const newOrder = {
@@ -391,10 +425,10 @@ export const orderService = {
   },
 };
 
-/* ================= AUTH SERVICES ================= */
+/* ================= AUTH SERVICES WITH 5 SEEDED USERS ================= */
 export const authService = {
   login: async (email, password) => {
-    await delay(200);
+    await delay(150);
     const cleanEmail = (email || '').trim().toLowerCase();
     
     // Check Admin Credentials
@@ -403,8 +437,9 @@ export const authService = {
       (password === 'Admin@123' || password === 'admin123' || password === 'admin' || password === 'Password@123')
     ) {
       const user = {
-        ...DEMO_USERS.admin,
+        id: 'usr_admin',
         email: 'admin@edkart.com',
+        fullName: 'Store Operations Admin',
         role: 'ADMIN',
       };
       const token = 'jwt_mock_admin_token_' + Date.now();
@@ -413,21 +448,40 @@ export const authService = {
       return { success: true, token, user };
     }
 
-    // Customer Authentication
+    // Check Seeded & Dynamically Registered Users
+    const storedUsers = getStored('users', INITIAL_USERS);
+    const existingUser = storedUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (existingUser) {
+      const token = 'jwt_mock_user_token_' + Date.now();
+      localStorage.setItem('edkart_auth_token', token);
+      localStorage.setItem('edkart_user', JSON.stringify(existingUser));
+      return { success: true, token, user: existingUser };
+    }
+
+    // Auto-create & persist newly registered customer
     if (password === 'Password@123' || password === 'user123' || password.length >= 6) {
-      const user = {
+      const newUser = {
         id: 'usr_' + Date.now(),
         email: cleanEmail,
         fullName: cleanEmail.includes('@') ? cleanEmail.split('@')[0].toUpperCase() : cleanEmail.toUpperCase(),
         role: 'USER',
+        joinedDate: new Date().toISOString().split('T')[0],
       };
+      storedUsers.push(newUser);
+      setStored('users', storedUsers);
+
       const token = 'jwt_mock_user_token_' + Date.now();
       localStorage.setItem('edkart_auth_token', token);
-      localStorage.setItem('edkart_user', JSON.stringify(user));
-      return { success: true, token, user };
+      localStorage.setItem('edkart_user', JSON.stringify(newUser));
+      return { success: true, token, user: newUser };
     }
 
     throw { status: 401, message: 'Invalid email or password. Please check your credentials.' };
+  },
+
+  getUsers: async () => {
+    return getStored('users', INITIAL_USERS);
   },
 
   logout: async () => {
