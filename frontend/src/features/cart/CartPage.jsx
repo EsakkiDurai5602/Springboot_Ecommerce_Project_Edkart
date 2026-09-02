@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Alert } from '../../components/ui/Alert';
@@ -126,7 +126,14 @@ export const CartPage = () => {
             {cartItems.map((item) => (
               <div key={item.productId} className="pt-4 first:pt-0 flex flex-col sm:flex-row items-center gap-4">
                 <Link to={`/product/${item.productId}`} className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  <img
+                    src={getProductImageUrl(item)}
+                    alt={item.name}
+                    onError={(e) => {
+                      e.target.src = CATEGORY_FALLBACK_IMAGES[item.category] || CATEGORY_FALLBACK_IMAGES.default;
+                    }}
+                    className="w-full h-full object-cover"
+                  />
                 </Link>
 
                 <div className="flex-1 min-w-0 space-y-1 text-center sm:text-left">

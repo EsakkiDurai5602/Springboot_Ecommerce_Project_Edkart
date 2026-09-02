@@ -29,27 +29,35 @@ const delay = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
 /* ================= PRODUCT SERVICES ================= */
 export const productService = {
   getProducts: async (params = {}) => {
+    let list = [];
     try {
-      const res = await apiClient.get('/products', { params });
-      if (res.data && res.data.products) {
-        return {
-          products: res.data.products.map(normalizeProduct),
-          total: res.data['total products'] || res.data.products.length,
-        };
+      const endpoint = params.keyword || (params.category && params.category !== 'all') ? '/products/search' : '/products';
+      const res = await apiClient.get(endpoint, { params });
+      if (res.data) {
+        const raw = res.data.products || (Array.isArray(res.data) ? res.data : []);
+        if (raw.length > 0) {
+          list = raw.map(normalizeProduct);
+        }
       }
     } catch (e) {
-      // fallback
+      // fallback to storage
     }
 
-    await delay(150);
-    let list = getStored('products', INITIAL_PRODUCTS);
+    if (!list || list.length === 0) {
+      await delay(50);
+      list = getStored('products', INITIAL_PRODUCTS);
+    }
 
     if (params.category && params.category !== 'all') {
-      list = list.filter((p) => p.category.toLowerCase() === params.category.toLowerCase());
+      const catLower = params.category.toLowerCase();
+      list = list.filter((p) => {
+        const pCat = (p.category || '').toLowerCase();
+        return pCat === catLower || (catLower === 'smartphones' && pCat === 'phone');
+      });
     }
     if (params.keyword) {
       const q = params.keyword.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+      list = list.filter((p) => (p.name || '').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
     }
     if (params.minPrice) {
       list = list.filter((p) => p.price >= Number(params.minPrice));
@@ -82,12 +90,22 @@ export const productService = {
   getProductById: async (id) => {
     try {
       const res = await apiClient.get(`/products/${id}`);
-      if (res.data) return normalizeProduct(res.data);
+      if (res.data) {
+        const prod = normalizeProduct(res.data);
+        const storedProducts = getStored('products', INITIAL_PRODUCTS);
+        const stored = storedProducts.find((p) => String(p.id) === String(id));
+        if (stored) {
+          prod.stock = stored.stock ?? prod.stock;
+          prod.reviews = stored.reviews || prod.reviews || [];
+          prod.numOfReviews = prod.reviews.length;
+        }
+        return prod;
+      }
     } catch (e) {
       // fallback
     }
 
-    await delay(100);
+    await delay(50);
     const products = getStored('products', INITIAL_PRODUCTS);
     const found = products.find((p) => String(p.id) === String(id));
     if (!found) throw { status: 404, message: 'Product not found.' };
@@ -201,6 +219,24 @@ const normalizeProduct = (p) => {
     images = [{ id: 1, url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80' }];
   }
 
+  const categoryMap = {
+    phone: 'Smartphones',
+    phones: 'Smartphones',
+    smartphones: 'Smartphones',
+    laptop: 'Laptops',
+    laptops: 'Laptops',
+    audio: 'Audio',
+    wearable: 'Wearables',
+    wearables: 'Wearables',
+    gaming: 'Gaming',
+    accessories: 'Accessories',
+    electronics: 'Electronics',
+    cloth: 'Accessories',
+    fashion: 'Accessories',
+  };
+  const rawCat = (p.category || '').toLowerCase();
+  const category = categoryMap[rawCat] || p.category || 'Electronics';
+
   return {
     id: p.id,
     name: p.name,
@@ -208,9 +244,9 @@ const normalizeProduct = (p) => {
     originalPrice: p.originalPrice || Number(p.price || 0) * 1.15,
     seller: p.seller || 'EdKart Verified Store',
     description: p.description || '',
-    category: p.category || 'Electronics',
+    category,
     stock: p.stock !== undefined ? p.stock : 10,
-    rating: Number(p.rating || 4.5),
+    rating: Number(p.rating || p.ratings || 4.5),
     numOfReviews: p.numOfReviews || (p.reviews ? p.reviews.length : 0),
     images,
     reviews: p.reviews || [],
@@ -224,12 +260,47 @@ export const orderService = {
   createOrder: async (orderPayload) => {
     try {
       const res = await apiClient.post('/orders', orderPayload);
-      if (res.data) return res.data;
+      if (res.data) {
+        // synchronize local storage
+        const orders = getStored('orders', INITIAL_ORDERS);
+        const orderNo = res.data.orderNo || res.data.order?.orderNumber || generateOrderNumber();
+        const newOrder = {
+          id: 'ord_' + Date.now(),
+          orderNumber: orderNo,
+          customerName: orderPayload.shippingAddress?.fullName || 'Customer',
+          email: orderPayload.email || 'user@edkart.com',
+          phone: orderPayload.shippingAddress?.phone || '+91 98765 43210',
+          shippingAddress: orderPayload.shippingAddress,
+          items: orderPayload.items,
+          subtotal: orderPayload.subtotal,
+          tax: orderPayload.tax || 0,
+          shippingFee: orderPayload.shippingFee || 0,
+          discount: orderPayload.discount || 0,
+          totalAmount: orderPayload.totalAmount,
+          paymentMethod: orderPayload.paymentMethod || 'Online Payment',
+          paymentStatus: 'PAID',
+          orderStatus: 'PROCESSING',
+          orderDate: new Date().toISOString(),
+        };
+        orders.unshift(newOrder);
+        setStored('orders', orders);
+
+        const products = getStored('products', INITIAL_PRODUCTS);
+        orderPayload.items.forEach((item) => {
+          const prod = products.find((p) => p.id === item.productId);
+          if (prod && prod.stock >= item.quantity) {
+            prod.stock -= item.quantity;
+          }
+        });
+        setStored('products', products);
+
+        return { orderNo, order: newOrder };
+      }
     } catch (e) {
       // fallback
     }
 
-    await delay(300);
+    await delay(200);
     const orders = getStored('orders', INITIAL_ORDERS);
     const orderNo = generateOrderNumber();
     const newOrder = {
@@ -270,12 +341,12 @@ export const orderService = {
   getOrders: async () => {
     try {
       const res = await apiClient.get('/orders');
-      if (res.data) return res.data;
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
     } catch (e) {
       // fallback
     }
 
-    await delay(150);
+    await delay(100);
     return getStored('orders', INITIAL_ORDERS);
   },
 
@@ -301,7 +372,7 @@ export const orderService = {
       // fallback
     }
 
-    await delay(200);
+    await delay(100);
     const orders = getStored('orders', INITIAL_ORDERS);
     const order = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
     if (order) {
@@ -309,7 +380,14 @@ export const orderService = {
       setStored('orders', orders);
       return order;
     }
-    throw { status: 404, message: 'Order not found' };
+    const fallbackOrder = {
+      id: orderId,
+      orderNumber: orderId,
+      orderStatus: newStatus,
+    };
+    orders.unshift(fallbackOrder);
+    setStored('orders', orders);
+    return fallbackOrder;
   },
 };
 

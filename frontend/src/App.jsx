@@ -35,7 +35,7 @@ export const App = () => {
       <AuthProvider>
         <CartProvider>
           <ToastProvider>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 {/* Public Storefront Routes */}
                 <Route element={<StoreLayout />}>

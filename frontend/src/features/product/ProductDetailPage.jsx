@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { productService } from '../../services/ecommerceServices';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatDate, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { StarRating } from '../../components/ui/StarRating';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -137,8 +137,11 @@ export const ProductDetailPage = () => {
         <div className="lg:col-span-6 space-y-4">
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl group">
             <img
-              src={product.images?.[selectedImage]?.url || product.images?.[0]?.url}
+              src={getProductImageUrl(product, selectedImage)}
               alt={product.name}
+              onError={(e) => {
+                e.target.src = CATEGORY_FALLBACK_IMAGES[product.category] || CATEGORY_FALLBACK_IMAGES.default;
+              }}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             {product.badge && (
@@ -163,7 +166,14 @@ export const ProductDetailPage = () => {
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img.url} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img
+                    src={getProductImageUrl(product, idx)}
+                    alt={`Angle ${idx + 1}`}
+                    onError={(e) => {
+                      e.target.src = CATEGORY_FALLBACK_IMAGES[product.category] || CATEGORY_FALLBACK_IMAGES.default;
+                    }}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>

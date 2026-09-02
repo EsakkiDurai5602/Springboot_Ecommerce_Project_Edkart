@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { orderService } from '../../services/ecommerceServices';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { formatCurrency, formatDateTime, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -159,7 +159,14 @@ export const AdminOrdersPage = () => {
               {selectedOrder?.items?.map((item, i) => (
                 <div key={i} className="py-2.5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover" />
+                    <img
+                      src={getProductImageUrl(item)}
+                      alt={item.name}
+                      onError={(e) => {
+                        e.target.src = CATEGORY_FALLBACK_IMAGES.default;
+                      }}
+                      className="w-10 h-10 rounded-lg object-cover"
+                    />
                     <div className="min-w-0">
                       <p className="font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
                       <p className="text-[10px] text-slate-400">Qty: {item.quantity} × {formatCurrency(item.price)}</p>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { Drawer } from '../ui/Drawer';
 import { Button } from '../ui/Button';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
@@ -73,8 +73,11 @@ export const CartDrawer = () => {
               {cartItems.map((item) => (
                 <div key={item.productId} className="py-3 flex gap-3 items-center">
                   <img
-                    src={item.imageUrl}
+                    src={getProductImageUrl(item)}
                     alt={item.name}
+                    onError={(e) => {
+                      e.target.src = CATEGORY_FALLBACK_IMAGES[item.category] || CATEGORY_FALLBACK_IMAGES.default;
+                    }}
                     className="w-16 h-16 rounded-xl object-cover bg-slate-100 dark:bg-slate-800 flex-shrink-0"
                   />
 

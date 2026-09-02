@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { productService } from '../../services/ecommerceServices';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { CATEGORIES } from '../../utils/constants';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -167,7 +167,14 @@ export const AdminProductsPage = () => {
             <TableRow key={p.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <img src={p.images?.[0]?.url} alt={p.name} className="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+                  <img
+                    src={getProductImageUrl(p)}
+                    alt={p.name}
+                    onError={(e) => {
+                      e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
+                    }}
+                    className="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0"
+                  />
                   <div className="min-w-0">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{p.name}</h4>
                     <span className="text-[10px] text-slate-400">Seller: {p.seller}</span>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productService } from '../../services/ecommerceServices';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { CATEGORIES } from '../../utils/constants';
 import { StarRating } from '../../components/ui/StarRating';
 import { Button } from '../../components/ui/Button';
@@ -175,8 +175,11 @@ export const HomePage = () => {
                 {/* Product Thumbnail */}
                 <Link to={`/product/${p.id}`} className="relative block h-56 bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <img
-                    src={p.images?.[0]?.url}
+                    src={getProductImageUrl(p)}
                     alt={p.name}
+                    onError={(e) => {
+                      e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   {p.badge && (

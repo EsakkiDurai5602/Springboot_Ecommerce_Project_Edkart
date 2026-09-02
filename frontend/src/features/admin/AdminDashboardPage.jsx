@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productService, orderService } from '../../services/ecommerceServices';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { formatCurrency, formatDateTime, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -154,7 +154,14 @@ export const AdminDashboardPage = () => {
               {lowStockProducts.slice(0, 4).map((p) => (
                 <div key={p.id} className="p-4 sm:px-6 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <img src={p.images?.[0]?.url} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    <img
+                      src={getProductImageUrl(p)}
+                      alt={p.name}
+                      onError={(e) => {
+                        e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
+                      }}
+                      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                    />
                     <div className="min-w-0">
                       <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{p.name}</h4>
                       <span className="text-[10px] text-slate-400">{p.category}</span>

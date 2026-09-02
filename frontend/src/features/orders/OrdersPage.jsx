@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { orderService } from '../../services/ecommerceServices';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { formatCurrency, formatDateTime, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import {
@@ -104,8 +104,11 @@ export const OrdersPage = () => {
                   <div key={i} className="py-3 first:pt-0 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
                       <img
-                        src={item.imageUrl}
+                        src={getProductImageUrl(item)}
                         alt={item.name}
+                        onError={(e) => {
+                          e.target.src = CATEGORY_FALLBACK_IMAGES.default;
+                        }}
                         className="w-14 h-14 rounded-2xl object-cover bg-slate-100 dark:bg-slate-800 flex-shrink-0"
                       />
                       <div className="min-w-0">
