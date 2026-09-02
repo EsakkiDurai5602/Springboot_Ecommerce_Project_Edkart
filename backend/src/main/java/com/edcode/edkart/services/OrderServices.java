@@ -58,4 +58,15 @@ public class OrderServices {
         Order order = orderRepository.findByOrderNo(orderNo).orElseThrow(()->new RuntimeException("Order not found"));
         return order;
     }
+
+    public java.util.List<Order> getAllOrders(){
+        return orderRepository.findAll();
+    }
+
+    @Transactional
+    public Order updateOrderStatus(String orderNo, String status){
+        Order order = orderRepository.findByOrderNo(orderNo).orElseThrow(()->new RuntimeException("Order not found"));
+        order.setStatus(status);
+        return orderRepository.save(order);
+    }
 }

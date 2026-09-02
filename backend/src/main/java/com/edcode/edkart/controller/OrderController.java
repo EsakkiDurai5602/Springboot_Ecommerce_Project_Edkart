@@ -26,4 +26,16 @@ public class OrderController {
         Order order = orderServices.getOrder(orderNo);
         return ResponseEntity.ok().body(order);
     }
+
+    @GetMapping
+    public ResponseEntity<?> getAllOrders(){
+        return ResponseEntity.ok().body(orderServices.getAllOrders());
+    }
+
+    @PutMapping("/{orderNo}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable String orderNo, @RequestBody java.util.Map<String, String> body){
+        String status = body.getOrDefault("status", "PROCESSING");
+        Order order = orderServices.updateOrderStatus(orderNo, status);
+        return ResponseEntity.ok().body(order);
+    }
 }
