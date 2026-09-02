@@ -5,8 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Card, CardBody } from '../../components/ui/Card';
-import { ShoppingBag, Lock, Mail, KeyRound, Sparkles, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { DEMO_USERS } from '../../utils/constants';
+import { ShoppingBag, Lock, Mail, KeyRound, ShieldCheck } from 'lucide-react';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -23,13 +22,14 @@ export const LoginPage = () => {
     setError(null);
 
     if (!email || !password) {
-      setError('Please enter your registered email and password.');
+      setError('Please enter your registered email/username and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await login(email, password);
+      // Auto-routing based on authenticated role
       if (res.user?.role === 'ADMIN') {
         navigate('/admin/dashboard', { replace: true });
       } else {
@@ -43,22 +43,11 @@ export const LoginPage = () => {
     }
   };
 
-  const handleQuickCustomer = () => {
-    setEmail(DEMO_USERS.customer.email);
-    setPassword(DEMO_USERS.customer.password);
-    setError(null);
-  };
-
-  const handleQuickAdmin = () => {
-    setEmail(DEMO_USERS.admin.email);
-    setPassword(DEMO_USERS.admin.password);
-    setError(null);
-  };
-
   return (
     <div className="max-w-md w-full mx-auto px-4 py-16">
       <Card variant="elevated">
         <CardBody className="p-8 space-y-6">
+          {/* Header */}
           <div className="text-center space-y-2">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-brand-500/20">
               <ShoppingBag className="w-6 h-6" />
@@ -67,38 +56,22 @@ export const LoginPage = () => {
               Sign In to EdKart
             </h2>
             <p className="text-xs text-slate-500">
-              Access your saved cart, orders, and personalized tech drops
+              Enter your credentials to access your customer account or admin management
             </p>
           </div>
 
-          {error && <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>}
+          {error && (
+            <Alert variant="error" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
 
-          {/* Quick Demo Fill Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={handleQuickCustomer}
-              className="py-2 px-3 rounded-xl bg-brand-50 dark:bg-slate-800 border border-brand-200 dark:border-slate-700 text-brand-700 dark:text-amber-400 text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-brand-100 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-brand-500" />
-              <span>Customer Demo</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleQuickAdmin}
-              className="py-2 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-amber-100 transition-colors"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-              <span>Store Admin</span>
-            </button>
-          </div>
-
+          {/* Simple Unified Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Email Address"
-              type="email"
-              placeholder="user@edkart.com"
+              label="Email or Username"
+              type="text"
+              placeholder="user@edkart.com or admin"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail className="w-4 h-4" />}
@@ -123,15 +96,21 @@ export const LoginPage = () => {
               isLoading={isLoading}
               className="mt-2"
             >
-              Sign In to Account
+              Sign In
             </Button>
           </form>
 
-          <div className="text-center pt-2">
+          {/* Security Guarantee */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center space-y-3">
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span>256-Bit SSL End-to-End Secure Authentication</span>
+            </div>
+
             <p className="text-xs text-slate-500">
               Don't have an account yet?{' '}
               <Link to="/register" className="text-brand-600 dark:text-amber-400 font-bold hover:underline">
-                Create Account
+                Create Customer Account
               </Link>
             </p>
           </div>

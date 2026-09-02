@@ -317,19 +317,31 @@ export const orderService = {
 export const authService = {
   login: async (email, password) => {
     await delay(200);
-    if (email === 'admin@edkart.com' && (password === 'Admin@123' || password === 'admin123')) {
-      const user = DEMO_USERS.admin;
+    const cleanEmail = (email || '').trim().toLowerCase();
+    
+    // Check Admin Credentials
+    if (
+      (cleanEmail === 'admin@edkart.com' || cleanEmail === 'admin') &&
+      (password === 'Admin@123' || password === 'admin123' || password === 'admin' || password === 'Password@123')
+    ) {
+      const user = {
+        ...DEMO_USERS.admin,
+        email: 'admin@edkart.com',
+        role: 'ADMIN',
+      };
       const token = 'jwt_mock_admin_token_' + Date.now();
       localStorage.setItem('edkart_auth_token', token);
       localStorage.setItem('edkart_user', JSON.stringify(user));
       return { success: true, token, user };
     }
 
-    if (password === 'Password@123' || password === 'user123' || email.includes('@')) {
+    // Customer Authentication
+    if (password === 'Password@123' || password === 'user123' || password.length >= 6) {
       const user = {
-        ...DEMO_USERS.customer,
-        email,
-        fullName: email.split('@')[0].toUpperCase(),
+        id: 'usr_' + Date.now(),
+        email: cleanEmail,
+        fullName: cleanEmail.includes('@') ? cleanEmail.split('@')[0].toUpperCase() : cleanEmail.toUpperCase(),
+        role: 'USER',
       };
       const token = 'jwt_mock_user_token_' + Date.now();
       localStorage.setItem('edkart_auth_token', token);
@@ -337,7 +349,7 @@ export const authService = {
       return { success: true, token, user };
     }
 
-    throw { status: 401, message: 'Invalid email or password.' };
+    throw { status: 401, message: 'Invalid email or password. Please check your credentials.' };
   },
 
   logout: async () => {

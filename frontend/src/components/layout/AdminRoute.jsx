@@ -24,7 +24,7 @@ export const AdminRoute = () => {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/403" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;
