@@ -1,124 +1,71 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { BankingProvider } from './context/BankingContext';
+import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
 
 // Layouts
-import { AppShell } from './components/layout/AppShell';
-import { PublicLayout } from './components/layout/PublicLayout';
-import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { StoreLayout } from './components/layout/StoreLayout';
+import { AdminLayout } from './components/layout/AdminLayout';
 import { AdminRoute } from './components/layout/AdminRoute';
-import { AdminLayout } from './features/admin/AdminLayout';
 
-// Public & Auth Pages
-import { LandingPage } from './features/landing/LandingPage';
+// Storefront Pages
+import { HomePage } from './features/home/HomePage';
+import { ShopPage } from './features/shop/ShopPage';
+import { ProductDetailPage } from './features/product/ProductDetailPage';
+import { CartPage } from './features/cart/CartPage';
+import { CheckoutPage } from './features/checkout/CheckoutPage';
+import { OrderSuccessPage } from './features/orders/OrderSuccessPage';
+import { OrdersPage } from './features/orders/OrdersPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
-import { VerifyOtpPage } from './features/auth/VerifyOtpPage';
-import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
-import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
 
-// Protected Banking Pages
-import { DashboardPage } from './features/dashboard/DashboardPage';
-import { AccountsPage } from './features/accounts/AccountsPage';
-import { AccountDetailPage } from './features/accounts/AccountDetailPage';
-import { TransactionsPage } from './features/transactions/TransactionsPage';
-import { TransactionDetailPage } from './features/transactions/TransactionDetailPage';
-import { TransferPage } from './features/transfers/TransferPage';
-import { BeneficiariesPage } from './features/beneficiaries/BeneficiariesPage';
-import { BillPaymentsPage } from './features/billpay/BillPaymentsPage';
-import { CardsPage } from './features/cards/CardsPage';
-import { LoansPage } from './features/loans/LoansPage';
-import { LoanCalculatorPage } from './features/loans/LoanCalculatorPage';
-import { ProductsPage } from './features/products/ProductsPage';
-import { ProfilePage } from './features/profile/ProfilePage';
-import { SecurityPage } from './features/security/SecurityPage';
-import { NotificationsPage } from './features/notifications/NotificationsPage';
-import { DocumentsPage } from './features/documents/DocumentsPage';
-import { SupportPage } from './features/support/SupportPage';
-import { SettingsPage } from './features/settings/SettingsPage';
-
-// Admin Portal Pages
+// Admin Pages
 import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
 import { AdminProductsPage } from './features/admin/AdminProductsPage';
-import { AdminCustomersPage } from './features/admin/AdminCustomersPage';
-import { AdminTransactionsPage } from './features/admin/AdminTransactionsPage';
-import { AdminSupportPage } from './features/admin/AdminSupportPage';
-import { AdminSystemLogsPage } from './features/admin/AdminSystemLogsPage';
+import { AdminOrdersPage } from './features/admin/AdminOrdersPage';
 
-// System Pages
-import { ForbiddenPage } from './features/system/ForbiddenPage';
+// System
 import { NotFoundPage } from './features/system/NotFoundPage';
-import { ServerErrorPage } from './features/system/ServerErrorPage';
-import { MaintenancePage } from './features/system/MaintenancePage';
 
 export const App = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BankingProvider>
+        <CartProvider>
           <ToastProvider>
             <BrowserRouter>
               <Routes>
-                {/* Public / Landing Routes */}
-                <Route element={<PublicLayout />}>
-                  <Route path="/" element={<LandingPage />} />
+                {/* Public Storefront Routes */}
+                <Route element={<StoreLayout />}>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/product/:id" element={<ProductDetailPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/orders/success/:orderNo" element={<OrderSuccessPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/verify-otp" element={<VerifyOtpPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/maintenance" element={<MaintenancePage />} />
                 </Route>
 
-                {/* Protected Internet Banking Application Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<AppShell />}>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/accounts" element={<AccountsPage />} />
-                    <Route path="/accounts/:id" element={<AccountDetailPage />} />
-                    <Route path="/transactions" element={<TransactionsPage />} />
-                    <Route path="/transactions/:id" element={<TransactionDetailPage />} />
-                    <Route path="/transfer" element={<TransferPage />} />
-                    <Route path="/beneficiaries" element={<BeneficiariesPage />} />
-                    <Route path="/bill-payments" element={<BillPaymentsPage />} />
-                    <Route path="/cards" element={<CardsPage />} />
-                    <Route path="/loans" element={<LoansPage />} />
-                    <Route path="/loans/calculator" element={<LoanCalculatorPage />} />
-                    <Route path="/products" element={<ProductsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/security" element={<SecurityPage />} />
-                    <Route path="/notifications" element={<NotificationsPage />} />
-                    <Route path="/documents" element={<DocumentsPage />} />
-                    <Route path="/support" element={<SupportPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                  </Route>
-                </Route>
-
-                {/* Protected Admin Portal Routes */}
+                {/* Operations Admin Portal Routes */}
                 <Route element={<AdminRoute />}>
                   <Route element={<AdminLayout />}>
                     <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                     <Route path="/admin/products" element={<AdminProductsPage />} />
-                    <Route path="/admin/customers" element={<AdminCustomersPage />} />
-                    <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
-                    <Route path="/admin/support" element={<AdminSupportPage />} />
-                    <Route path="/admin/logs" element={<AdminSystemLogsPage />} />
+                    <Route path="/admin/orders" element={<AdminOrdersPage />} />
                   </Route>
                 </Route>
 
-                {/* System Error Routes */}
-                <Route path="/403" element={<ForbiddenPage />} />
-                <Route path="/500" element={<ServerErrorPage />} />
-                <Route path="/404" element={<NotFoundPage />} />
+                {/* Fallback 404 */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </BrowserRouter>
           </ToastProvider>
-        </BankingProvider>
+        </CartProvider>
       </AuthProvider>
     </ThemeProvider>
   );

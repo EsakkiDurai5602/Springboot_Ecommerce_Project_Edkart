@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { productService } from '../../services/bankingServices';
-import {
-  Package,
-  Plus,
-  Edit,
-  Trash2,
-  Image as ImageIcon,
-  CheckCircle2,
-  Sparkles,
-  Search,
-  ExternalLink,
-} from 'lucide-react';
+import { productService } from '../../services/ecommerceServices';
+import { formatCurrency } from '../../utils/formatters';
+import { CATEGORIES } from '../../utils/constants';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -19,6 +10,16 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Alert } from '../../components/ui/Alert';
+import { Table, TableRow, TableCell } from '../../components/ui/Table';
+import {
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  Image as ImageIcon,
+  Search,
+  CheckCircle2,
+} from 'lucide-react';
 
 export const AdminProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -31,19 +32,19 @@ export const AdminProductsPage = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: 'savings',
-    tagline: '',
-    interestRate: '',
-    minBalance: '',
+    price: '',
+    originalPrice: '',
+    category: 'Smartphones',
+    seller: 'EdKart Authorized Seller',
+    stock: 20,
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
     badge: 'Popular',
-    recommended: true,
-    imageUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=600&auto=format&fit=crop&q=80',
-    features: 'Instant digital onboarding\nZero maintenance fee\n24/7 Concierge',
   });
 
   const loadProducts = async () => {
-    const list = await productService.getProducts();
-    setProducts(list || []);
+    const res = await productService.getProducts();
+    setProducts(res.products || []);
   };
 
   useEffect(() => {
@@ -54,14 +55,14 @@ export const AdminProductsPage = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
-      category: 'savings',
-      tagline: '',
-      interestRate: '',
-      minBalance: '',
+      price: '',
+      originalPrice: '',
+      category: 'Smartphones',
+      seller: 'EdKart Authorized Store',
+      stock: 25,
+      description: 'Premium flagship device with pro performance and battery life.',
+      imageUrl: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
       badge: 'New Launch',
-      recommended: true,
-      imageUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=600&auto=format&fit=crop&q=80',
-      features: 'Instant digital onboarding\nZero maintenance fee\n24/7 Concierge',
     });
     setError(null);
     setIsModalOpen(true);
@@ -71,14 +72,14 @@ export const AdminProductsPage = () => {
     setEditingProduct(prod);
     setFormData({
       name: prod.name,
-      category: prod.category || 'savings',
-      tagline: prod.tagline || '',
-      interestRate: prod.interestRate || '',
-      minBalance: prod.minBalance || '',
+      price: prod.price,
+      originalPrice: prod.originalPrice || '',
+      category: prod.category || 'Smartphones',
+      seller: prod.seller || '',
+      stock: prod.stock || 10,
+      description: prod.description || '',
+      imageUrl: prod.images?.[0]?.url || '',
       badge: prod.badge || '',
-      recommended: !!prod.recommended,
-      imageUrl: prod.imageUrl || '',
-      features: Array.isArray(prod.features) ? prod.features.join('\n') : '',
     });
     setError(null);
     setIsModalOpen(true);
@@ -86,14 +87,14 @@ export const AdminProductsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.interestRate) {
-      setError('Please provide product name and interest rate.');
+    if (!formData.name || !formData.price) {
+      setError('Please provide product title and price.');
       return;
     }
 
     const payload = {
       ...formData,
-      features: formData.features.split('\n').filter((f) => f.trim().length > 0),
+      images: [formData.imageUrl],
     };
 
     try {
@@ -101,8 +102,8 @@ export const AdminProductsPage = () => {
         await productService.updateProduct(editingProduct.id, payload);
         setSuccessMsg(`Updated ${formData.name}`);
       } else {
-        await productService.addProduct(payload);
-        setSuccessMsg(`Added ${formData.name} to catalog`);
+        await productService.createProduct(payload);
+        setSuccessMsg(`Added ${formData.name} to store inventory`);
       }
       setIsModalOpen(false);
       await loadProducts();
@@ -133,10 +134,10 @@ export const AdminProductsPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Banking Products Catalog Management
+            Product Inventory Management (CRUD)
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Add, update interest rates, manage product images, and configure customer offerings
+            Add new products, manage image URLs, adjust stock quantities, and update catalog pricing
           </p>
         </div>
 
@@ -152,76 +153,69 @@ export const AdminProductsPage = () => {
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
         <input
           type="text"
-          placeholder="Search products by title or category..."
+          placeholder="Filter products by title or category..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((prod) => (
-          <Card key={prod.id} variant="default" className="flex flex-col justify-between overflow-hidden">
-            <div>
-              {/* Product Visual Header */}
-              <div className="relative h-44 bg-slate-900 overflow-hidden group">
-                <img
-                  src={prod.imageUrl || 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=600&auto=format&fit=crop&q=80'}
-                  alt={prod.name}
-                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute top-3 right-3">
-                  <Badge variant="warning" size="sm">
-                    {prod.badge || prod.category.toUpperCase()}
-                  </Badge>
-                </div>
-              </div>
-
-              <CardBody className="p-5 space-y-3">
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">{prod.name}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{prod.tagline}</p>
-
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs space-y-1">
-                  <div className="flex justify-between font-semibold">
-                    <span className="text-slate-400">Rate / ROI:</span>
-                    <span className="font-bold text-amber-600 dark:text-amber-400">{prod.interestRate}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-500">
-                    <span>Min Balance:</span>
-                    <span className="text-slate-800 dark:text-slate-200">{prod.minBalance}</span>
+      {/* Products Table */}
+      <Card variant="default">
+        <Table headers={['Product Information', 'Category', 'Price', 'Stock Level', 'Rating', 'Actions']}>
+          {filtered.map((p) => (
+            <TableRow key={p.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <img src={p.images?.[0]?.url} alt={p.name} className="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{p.name}</h4>
+                    <span className="text-[10px] text-slate-400">Seller: {p.seller}</span>
                   </div>
                 </div>
+              </TableCell>
 
-                <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                  {prod.features?.slice(0, 3).map((f, i) => (
-                    <li key={i} className="flex items-center gap-1.5 truncate">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                      <span className="truncate">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardBody>
-            </div>
+              <TableCell>
+                <Badge variant="brand" size="sm">
+                  {p.category}
+                </Badge>
+              </TableCell>
 
-            <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-              <Button onClick={() => handleOpenEdit(prod)} variant="secondary" size="sm" leftIcon={<Edit className="w-3.5 h-3.5" />}>
-                Edit Details
-              </Button>
-              <Button onClick={() => setDeletingProduct(prod)} variant="danger" size="sm" leftIcon={<Trash2 className="w-3.5 h-3.5" />}>
-                Delete
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+              <TableCell className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                {formatCurrency(p.price)}
+              </TableCell>
+
+              <TableCell>
+                <Badge variant={p.stock > 15 ? 'success' : 'danger'} size="sm" dot>
+                  {p.stock} in stock
+                </Badge>
+              </TableCell>
+
+              <TableCell className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                ★ {p.rating} ({p.numOfReviews})
+              </TableCell>
+
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <Button onClick={() => handleOpenEdit(p)} variant="secondary" size="sm" leftIcon={<Edit className="w-3.5 h-3.5" />}>
+                    Edit
+                  </Button>
+                  <Button onClick={() => setDeletingProduct(p)} variant="danger" size="sm" leftIcon={<Trash2 className="w-3.5 h-3.5" />}>
+                    Delete
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </Table>
+      </Card>
 
       {/* Add / Edit Product Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingProduct ? `Edit ${editingProduct.name}` : 'Add New Banking Product'}
-        subtitle="Manage product interest rates, promotional badges, and visual representations"
+        title={editingProduct ? `Edit ${editingProduct.name}` : 'Add New E-Commerce Product'}
+        subtitle="Specify product title, image URL, category, stock, and pricing"
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -231,7 +225,7 @@ export const AdminProductsPage = () => {
             label="Product Title"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g. Titanium Metal Wealth Card"
+            placeholder="e.g. Apple iPhone 16 Pro Max 256GB"
             required
           />
 
@@ -241,67 +235,62 @@ export const AdminProductsPage = () => {
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             >
-              <option value="savings">Savings Account</option>
-              <option value="deposits">Fixed Term Deposit</option>
-              <option value="cards">Credit / Debit Card</option>
-              <option value="loans">Mortgage / Auto Loan</option>
-              <option value="investments">Mutual Fund / Wealth SIP</option>
+              {CATEGORIES.filter((c) => c.id !== 'all').map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </Select>
 
             <Input
-              label="Promotional Badge"
-              value={formData.badge}
-              onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-              placeholder="e.g. Lowest Interest"
+              label="Seller / Brand"
+              value={formData.seller}
+              onChange={(e) => setFormData({ ...formData, seller: e.target.value })}
+              placeholder="e.g. Apple Authorized Store"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Interest Rate / Return"
-              value={formData.interestRate}
-              onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
-              placeholder="e.g. 7.50% p.a."
+              label="Selling Price (₹)"
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              placeholder="144900"
               required
             />
 
             <Input
-              label="Min Balance / Tenure"
-              value={formData.minBalance}
-              onChange={(e) => setFormData({ ...formData, minBalance: e.target.value })}
-              placeholder="e.g. Starting from ₹5,000"
+              label="Stock Units"
+              type="number"
+              value={formData.stock}
+              onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+              placeholder="25"
+              required
             />
           </div>
 
           <Input
-            label="Tagline / Description"
-            value={formData.tagline}
-            onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-            placeholder="e.g. Guaranteed yields with flexible quarterly payout"
-          />
-
-          <Input
-            label="Product Image URL"
+            label="High-Resolution Image URL"
             value={formData.imageUrl}
             onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
             placeholder="https://images.unsplash.com/..."
             leftIcon={<ImageIcon className="w-4 h-4" />}
+            required
           />
 
           <div>
             <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
-              Key Features (One item per line)
+              Product Description & Specifications
             </label>
             <textarea
               rows={3}
-              value={formData.features}
-              onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full text-xs p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none"
             />
           </div>
 
           <Button type="submit" variant="primary" fullWidth size="lg">
-            {editingProduct ? 'Save Product Updates' : 'Publish Product to Catalog'}
+            {editingProduct ? 'Save Changes' : 'Publish Product to Store'}
           </Button>
         </form>
       </Modal>
@@ -311,8 +300,8 @@ export const AdminProductsPage = () => {
         isOpen={!!deletingProduct}
         onClose={() => setDeletingProduct(null)}
         onConfirm={handleDeleteConfirm}
-        title="Remove Banking Product"
-        message={`Are you sure you want to delete ${deletingProduct?.name} from the public banking catalog?`}
+        title="Remove Product"
+        message={`Are you sure you want to remove "${deletingProduct?.name}" from store inventory?`}
         confirmText="Delete Product"
       />
     </div>

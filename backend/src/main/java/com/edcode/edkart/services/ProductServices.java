@@ -81,6 +81,34 @@ public class ProductServices {
         productRepository.save(product);
     }
 
+    @Transactional
+    public ProductDto createProduct(Product product) {
+        Product saved = productRepository.save(product);
+        return convertToDto(saved);
+    }
+
+    @Transactional
+    public ProductDto updateProduct(Long id, Product productDetails) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+        product.setName(productDetails.getName());
+        product.setPrice(productDetails.getPrice());
+        product.setCategory(productDetails.getCategory());
+        product.setDescription(productDetails.getDescription());
+        product.setSeller(productDetails.getSeller());
+        product.setStock(productDetails.getStock());
+        if (productDetails.getImages() != null && !productDetails.getImages().isEmpty()) {
+            product.setImages(productDetails.getImages());
+        }
+        Product updated = productRepository.save(product);
+        return convertToDto(updated);
+    }
+
+    @Transactional
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+        productRepository.delete(product);
+    }
+
     public void addImages(ProductImageDto productImageDto) {
 
     }

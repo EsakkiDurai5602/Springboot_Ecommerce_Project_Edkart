@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authService, profileService } from '../services/bankingServices';
-import { INITIAL_USER } from '../services/mockData';
+import { authService } from '../services/ecommerceServices';
 
 const AuthContext = createContext(null);
 
@@ -8,7 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sessionTimeout, setSessionTimeout] = useState(false);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('edkart_auth_token');
@@ -24,35 +22,15 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
-
-    const handleSessionExpired = () => {
-      setUser(null);
-      setToken(null);
-      setSessionTimeout(true);
-    };
-
-    window.addEventListener('edkart:session_expired', handleSessionExpired);
-    return () => window.removeEventListener('edkart:session_expired', handleSessionExpired);
   }, []);
 
   const login = useCallback(async (email, password) => {
     setLoading(true);
     try {
-      const response = await authService.login(email, password);
-      setUser(response.user);
-      setToken(response.token);
-      setSessionTimeout(false);
-      return response;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const register = useCallback(async (formData) => {
-    setLoading(true);
-    try {
-      const response = await authService.register(formData);
-      return response;
+      const res = await authService.login(email, password);
+      setUser(res.user);
+      setToken(res.token);
+      return res;
     } finally {
       setLoading(false);
     }
@@ -64,26 +42,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
   }, []);
 
-  const updateProfile = useCallback(async (updatedData) => {
-    const res = await profileService.updateProfile(updatedData);
-    if (res.user) {
-      setUser(res.user);
-    }
-    return res;
-  }, []);
-
   const value = {
     user,
     token,
     isAuthenticated: !!token && !!user,
     isAdmin: user?.role === 'ADMIN',
     loading,
-    sessionTimeout,
-    setSessionTimeout,
     login,
-    register,
     logout,
-    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -91,8 +57,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
