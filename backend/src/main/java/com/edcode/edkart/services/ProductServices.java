@@ -117,6 +117,7 @@ public class ProductServices {
         ProductDto dto = new ProductDto();
         dto.setId(product.getId());
         dto.setName(product.getName());
+        dto.setPrice(product.getPrice());
         dto.setDescription(product.getDescription());
         dto.setRating(product.getRating());
         dto.setCategory(product.getCategory());
@@ -138,8 +139,8 @@ public class ProductServices {
         dto.setReviews(productReviewDto);
 
         List<ProductImageDto> productImageDto  = product.getImages().stream().map(image -> {
-            ProductImageDto imageDto = new ProductImageDto(image.getPublicId());
-            return imageDto;
+            String url = image.getUrl() != null ? image.getUrl() : image.getPublicId();
+            return new ProductImageDto(url);
         }).collect(Collectors.toList());
 
         dto.setImages(productImageDto);

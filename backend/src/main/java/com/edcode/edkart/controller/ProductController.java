@@ -18,7 +18,7 @@ public class ProductController {
     private ProductServices productServices;
 
     @GetMapping
-    public ResponseEntity<Map<String,Object>> getAllProducts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size){
+    public ResponseEntity<Map<String,Object>> getAllProducts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size){
         Map<String,Object> products = productServices.getProductList(page,size);
         return ResponseEntity.ok(products);
     }
