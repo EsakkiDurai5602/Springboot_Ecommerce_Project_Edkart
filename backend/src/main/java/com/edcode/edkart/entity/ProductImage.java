@@ -52,11 +52,14 @@ public class ProductImage {
     @JsonIgnore
     private Product product;
 
-
     public ProductImage(String url, Product product) {
-        this.url="/uploads/"+url;
-        this.publicId="/"+url;
-        this.product=product;
+        if (url != null && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/") || url.startsWith("data:") || url.startsWith("assets/"))) {
+            this.url = url;
+            this.publicId = url;
+        } else {
+            this.url = "/uploads/" + (url != null ? url : "");
+            this.publicId = "/" + (url != null ? url : "");
+        }
+        this.product = product;
     }
-
 }

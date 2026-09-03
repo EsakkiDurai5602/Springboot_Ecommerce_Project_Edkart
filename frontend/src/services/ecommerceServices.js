@@ -1,6 +1,5 @@
 import apiClient from './apiClient';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from './ecommerceData';
-import { DEMO_USERS } from '../utils/constants';
 import { generateOrderNumber } from '../utils/formatters';
 
 const getStored = (key, defaultVal) => {
@@ -20,12 +19,15 @@ const setStored = (key, val) => {
   }
 };
 
-// Initialize persistent storage
-if (!localStorage.getItem('edkart_ec_products')) setStored('products', INITIAL_PRODUCTS);
+// Initialize & upgrade persistent storage
+const storedProducts = getStored('products', null);
+if (!storedProducts || !storedProducts[0]?.images || storedProducts[0].images.length < 3) {
+  setStored('products', INITIAL_PRODUCTS);
+}
 if (!localStorage.getItem('edkart_ec_orders')) setStored('orders', INITIAL_ORDERS);
 if (!localStorage.getItem('edkart_ec_users')) setStored('users', INITIAL_USERS);
 
-const delay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /* ================= PRODUCT SERVICES ================= */
 export const productService = {
@@ -45,8 +47,8 @@ export const productService = {
     }
 
     if (!list || list.length === 0) {
-      await delay(50);
-      list = getStored('products', INITIAL_PRODUCTS);
+      await delay(40);
+      list = getStored('products', INITIAL_PRODUCTS).map(normalizeProduct);
     }
 
     if (params.category && params.category !== 'all') {
@@ -106,11 +108,11 @@ export const productService = {
       // fallback
     }
 
-    await delay(50);
+    await delay(40);
     const products = getStored('products', INITIAL_PRODUCTS);
     const found = products.find((p) => String(p.id) === String(id));
     if (!found) throw { status: 404, message: 'Product not found.' };
-    return found;
+    return normalizeProduct(found);
   },
 
   createProduct: async (productData) => {
@@ -127,10 +129,9 @@ export const productService = {
       // fallback
     }
 
-    await delay(150);
+    await delay(100);
     const products = getStored('products', INITIAL_PRODUCTS);
 
-    // Format up to 5 images
     let images = [];
     if (Array.isArray(productData.images) && productData.images.length > 0) {
       images = productData.images.slice(0, 5).map((img, i) => ({
@@ -173,11 +174,10 @@ export const productService = {
       // fallback
     }
 
-    await delay(150);
+    await delay(100);
     const products = getStored('products', INITIAL_PRODUCTS);
     const index = products.findIndex((p) => String(p.id) === String(id));
     if (index !== -1) {
-      // If images array is provided, format cleanly
       let images = products[index].images;
       if (Array.isArray(updatedFields.images)) {
         images = updatedFields.images.slice(0, 5).map((img, i) => ({
@@ -194,7 +194,7 @@ export const productService = {
         images,
       };
       setStored('products', products);
-      return products[index];
+      return normalizeProduct(products[index]);
     }
     throw { status: 404, message: 'Product not found' };
   },
@@ -206,7 +206,7 @@ export const productService = {
       // fallback
     }
 
-    await delay(150);
+    await delay(100);
     let products = getStored('products', INITIAL_PRODUCTS);
     products = products.filter((p) => String(p.id) !== String(id));
     setStored('products', products);
@@ -220,7 +220,7 @@ export const productService = {
       // fallback
     }
 
-    await delay(150);
+    await delay(100);
     const products = getStored('products', INITIAL_PRODUCTS);
     const product = products.find((p) => String(p.id) === String(productId));
     if (product) {
@@ -243,12 +243,19 @@ export const productService = {
 
 /* Helper to normalize backend DTO format to standard UI format */
 const normalizeProduct = (p) => {
+  if (!p) return null;
   let images = [];
-  if (p.images && p.images.length > 0) {
-    images = p.images.slice(0, 5).map((img, idx) => ({
-      id: idx + 1,
-      url: typeof img === 'string' ? img : img.url || img.publicId || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80',
-    }));
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    images = p.images.slice(0, 5).map((img, idx) => {
+      let url = typeof img === 'string' ? img : img.url || img.publicId || '';
+      if (typeof url === 'string' && url.startsWith('/uploads/http')) {
+        url = url.replace('/uploads/', '');
+      }
+      return {
+        id: idx + 1,
+        url: url || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80',
+      };
+    });
   } else {
     images = [{ id: 1, url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80' }];
   }
@@ -275,17 +282,70 @@ const normalizeProduct = (p) => {
     id: p.id,
     name: p.name,
     price: Number(p.price || 0),
-    originalPrice: p.originalPrice || Number(p.price || 0) * 1.15,
+    originalPrice: p.originalPrice ? Number(p.originalPrice) : Number(p.price || 0) * 1.15,
     seller: p.seller || 'EdKart Verified Store',
     description: p.description || '',
     category,
-    stock: p.stock !== undefined ? p.stock : 10,
-    rating: Number(p.rating || p.ratings || 4.5),
+    stock: p.stock !== undefined ? Number(p.stock) : 10,
+    rating: Number(p.rating || p.ratings || 4.8),
     numOfReviews: p.numOfReviews || (p.reviews ? p.reviews.length : 0),
     images,
     reviews: p.reviews || [],
     featured: p.featured || false,
-    badge: p.badge || (p.rating >= 4.8 ? 'Best Seller' : ''),
+    badge: p.badge || (Number(p.rating || p.ratings || 0) >= 4.8 ? 'Best Seller' : ''),
+  };
+};
+
+/* Helper to normalize backend Order format to unified UI format */
+const normalizeOrder = (o) => {
+  if (!o) return null;
+  const rawItems = o.items || o.orderItem || [];
+  const items = rawItems.map((item, idx) => {
+    let rawImg = item.imageUrl || item.image || '';
+    if (typeof rawImg === 'string' && rawImg.startsWith('/uploads/http')) {
+      rawImg = rawImg.replace('/uploads/', '');
+    }
+    return {
+      id: item.id || idx + 1,
+      productId: item.productId || item.product?.id || item.id,
+      name: item.name || 'EdKart Verified Item',
+      price: Number(item.price || 0),
+      quantity: Number(item.quantity || 1),
+      imageUrl: rawImg || '/assets/products/iphone16_pro.jpg',
+    };
+  });
+
+  const subtotal = Number(o.subtotal || o.totalItemAmount || o.totalAmount || 0);
+  const totalAmount = Number(
+    o.totalAmount !== undefined && o.totalAmount !== null
+      ? o.totalAmount
+      : subtotal + Number(o.tax || 0) + Number(o.shippingFee || 0) - Number(o.discount || 0)
+  );
+
+  return {
+    id: o.id || o.orderNo || 'ord_' + Date.now(),
+    orderNumber: o.orderNumber || o.orderNo || `EDK-ORD-${o.id}`,
+    customerName: o.customerName || o.shippingAddress?.fullName || 'Valued Customer',
+    email: o.email || 'customer@edkart.com',
+    phone: o.phone || o.shippingAddress?.phone || '+91 98765 43210',
+    shippingAddress: o.shippingAddress || {
+      fullName: o.customerName || 'Valued Customer',
+      phone: o.phone || '+91 98765 43210',
+      street: '42 Silicon Boulevard',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pincode: '560100',
+    },
+    items,
+    subtotal,
+    tax: Number(o.tax || 0),
+    shippingFee: Number(o.shippingFee || 0),
+    discount: Number(o.discount || 0),
+    totalAmount,
+    paymentMethod: o.paymentMethod || 'Online Payment (UPI/Card)',
+    paymentStatus: o.paymentStatus || 'PAID',
+    orderStatus: o.orderStatus || o.status || 'PROCESSING',
+    orderDate: o.orderDate || o.createdAt || new Date().toISOString(),
   };
 };
 
@@ -295,28 +355,21 @@ export const orderService = {
     try {
       const res = await apiClient.post('/orders', orderPayload);
       if (res.data) {
-        // synchronize local storage
-        const orders = getStored('orders', INITIAL_ORDERS);
         const orderNo = res.data.orderNo || res.data.order?.orderNumber || generateOrderNumber();
-        const newOrder = {
-          id: 'ord_' + Date.now(),
-          orderNumber: orderNo,
+        const normalized = normalizeOrder({
+          ...res.data,
+          orderNo,
           customerName: orderPayload.shippingAddress?.fullName || 'Customer',
           email: orderPayload.email || 'user@edkart.com',
           phone: orderPayload.shippingAddress?.phone || '+91 98765 43210',
           shippingAddress: orderPayload.shippingAddress,
           items: orderPayload.items,
           subtotal: orderPayload.subtotal,
-          tax: orderPayload.tax || 0,
-          shippingFee: orderPayload.shippingFee || 0,
-          discount: orderPayload.discount || 0,
           totalAmount: orderPayload.totalAmount,
-          paymentMethod: orderPayload.paymentMethod || 'Online Payment',
-          paymentStatus: 'PAID',
-          orderStatus: 'PROCESSING',
-          orderDate: new Date().toISOString(),
-        };
-        orders.unshift(newOrder);
+        });
+
+        const orders = getStored('orders', INITIAL_ORDERS).map(normalizeOrder);
+        orders.unshift(normalized);
         setStored('orders', orders);
 
         const products = getStored('products', INITIAL_PRODUCTS);
@@ -328,16 +381,16 @@ export const orderService = {
         });
         setStored('products', products);
 
-        return { orderNo, order: newOrder };
+        return { orderNo, order: normalized };
       }
     } catch (e) {
       // fallback
     }
 
-    await delay(150);
-    const orders = getStored('orders', INITIAL_ORDERS);
+    await delay(100);
+    const orders = getStored('orders', INITIAL_ORDERS).map(normalizeOrder);
     const orderNo = generateOrderNumber();
-    const newOrder = {
+    const newOrder = normalizeOrder({
       id: 'ord_' + Date.now(),
       orderNumber: orderNo,
       customerName: orderPayload.shippingAddress?.fullName || 'Customer',
@@ -354,7 +407,7 @@ export const orderService = {
       paymentStatus: 'PAID',
       orderStatus: 'PROCESSING',
       orderDate: new Date().toISOString(),
-    };
+    });
 
     orders.unshift(newOrder);
     setStored('orders', orders);
@@ -375,25 +428,27 @@ export const orderService = {
   getOrders: async () => {
     try {
       const res = await apiClient.get('/orders');
-      if (res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data.map(normalizeOrder);
+      }
     } catch (e) {
       // fallback
     }
 
-    await delay(100);
-    return getStored('orders', INITIAL_ORDERS);
+    await delay(60);
+    return getStored('orders', INITIAL_ORDERS).map(normalizeOrder);
   },
 
   getOrderById: async (orderNo) => {
     try {
       const res = await apiClient.get(`/orders/${orderNo}`);
-      if (res.data) return res.data;
+      if (res.data) return normalizeOrder(res.data);
     } catch (e) {
       // fallback
     }
 
-    await delay(100);
-    const orders = getStored('orders', INITIAL_ORDERS);
+    await delay(50);
+    const orders = getStored('orders', INITIAL_ORDERS).map(normalizeOrder);
     const found = orders.find((o) => o.orderNumber === orderNo || o.id === orderNo);
     if (!found) throw { status: 404, message: 'Order not found' };
     return found;
@@ -406,19 +461,19 @@ export const orderService = {
       // fallback
     }
 
-    await delay(100);
-    const orders = getStored('orders', INITIAL_ORDERS);
+    await delay(60);
+    const orders = getStored('orders', INITIAL_ORDERS).map(normalizeOrder);
     const order = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
     if (order) {
       order.orderStatus = newStatus;
       setStored('orders', orders);
       return order;
     }
-    const fallbackOrder = {
+    const fallbackOrder = normalizeOrder({
       id: orderId,
       orderNumber: orderId,
       orderStatus: newStatus,
-    };
+    });
     orders.unshift(fallbackOrder);
     setStored('orders', orders);
     return fallbackOrder;
@@ -428,7 +483,7 @@ export const orderService = {
 /* ================= AUTH SERVICES WITH 5 SEEDED USERS ================= */
 export const authService = {
   login: async (email, password) => {
-    await delay(150);
+    await delay(100);
     const cleanEmail = (email || '').trim().toLowerCase();
     
     // Check Admin Credentials

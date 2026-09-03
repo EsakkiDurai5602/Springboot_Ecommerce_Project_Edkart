@@ -3,7 +3,7 @@
  */
 
 export const formatCurrency = (amount, currency = 'INR') => {
-  if (amount === null || amount === undefined || isNaN(amount)) return '₹0.00';
+  if (amount === null || amount === undefined || isNaN(Number(amount))) return '₹0.00';
   const num = Number(amount);
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -16,13 +16,14 @@ export const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   try {
     const d = new Date(dateString);
+    if (isNaN(d.getTime())) return String(dateString);
     return new Intl.DateTimeFormat('en-IN', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
     }).format(d);
   } catch (e) {
-    return dateString;
+    return String(dateString);
   }
 };
 
@@ -30,6 +31,7 @@ export const formatDateTime = (dateString) => {
   if (!dateString) return 'N/A';
   try {
     const d = new Date(dateString);
+    if (isNaN(d.getTime())) return String(dateString);
     return new Intl.DateTimeFormat('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -38,7 +40,7 @@ export const formatDateTime = (dateString) => {
       minute: '2-digit',
     }).format(d);
   } catch (e) {
-    return dateString;
+    return String(dateString);
   }
 };
 
@@ -50,7 +52,7 @@ export const generateOrderNumber = () => {
 
 export const calculateDiscount = (originalPrice, discountPercent) => {
   if (!originalPrice || !discountPercent) return originalPrice;
-  return originalPrice - (originalPrice * discountPercent) / 100;
+  return Number(originalPrice) - (Number(originalPrice) * Number(discountPercent)) / 100;
 };
 
 export const CATEGORY_FALLBACK_IMAGES = {
@@ -70,18 +72,34 @@ export const CATEGORY_FALLBACK_IMAGES = {
 export const getProductImageUrl = (product, index = 0) => {
   if (!product) return CATEGORY_FALLBACK_IMAGES.default;
   
-  const rawUrl =
-    typeof product === 'string'
-      ? product
-      : product.images?.[index]?.url ||
-        product.images?.[index] ||
-        product.imageUrl ||
-        product.image;
-
-  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:image/'))) {
-    return rawUrl;
+  let rawUrl = '';
+  if (typeof product === 'string') {
+    rawUrl = product;
+  } else if (Array.isArray(product.images) && product.images.length > 0) {
+    const imgItem = product.images[index] || product.images[0];
+    rawUrl = typeof imgItem === 'string' ? imgItem : imgItem.url || imgItem.publicId || '';
+  } else if (product.imageUrl) {
+    rawUrl = product.imageUrl;
+  } else if (product.image) {
+    rawUrl = product.image;
   }
 
-  const category = product.category || 'default';
+  if (typeof rawUrl === 'string' && rawUrl.trim().length > 0) {
+    let cleanUrl = rawUrl.trim();
+    if (cleanUrl.startsWith('/uploads/http')) {
+      cleanUrl = cleanUrl.replace('/uploads/', '');
+    }
+    if (
+      cleanUrl.startsWith('http://') ||
+      cleanUrl.startsWith('https://') ||
+      cleanUrl.startsWith('/') ||
+      cleanUrl.startsWith('assets/') ||
+      cleanUrl.startsWith('data:image/')
+    ) {
+      return cleanUrl;
+    }
+  }
+
+  const category = (typeof product === 'object' && product.category) ? product.category : 'default';
   return CATEGORY_FALLBACK_IMAGES[category] || CATEGORY_FALLBACK_IMAGES.default;
 };
