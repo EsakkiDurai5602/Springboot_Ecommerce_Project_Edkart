@@ -21,7 +21,7 @@ const setStored = (key, val) => {
 
 // Initialize & upgrade persistent storage
 const storedProducts = getStored('products', null);
-if (!storedProducts || !storedProducts[0]?.images || storedProducts[0].images.length < 3) {
+if (!storedProducts || !storedProducts.some(p => p.name?.includes('Pixel') || p.name?.includes('Razer') || p.name?.includes('OnePlus'))) {
   setStored('products', INITIAL_PRODUCTS);
 }
 if (!localStorage.getItem('edkart_ec_orders')) setStored('orders', INITIAL_ORDERS);
