@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { productService } from '../../services/ecommerceServices';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency, formatDate, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
+import { formatCurrency, formatDate, getProductImageUrl, CATEGORY_FALLBACK_IMAGES, getCategorySvgFallback } from '../../utils/formatters';
 import { StarRating } from '../../components/ui/StarRating';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -133,51 +133,105 @@ export const ProductDetailPage = () => {
 
       {/* Main Product Hero Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Gallery */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl group">
-            <img
-              src={getProductImageUrl(product, selectedImage)}
-              alt={product.name}
-              onError={(e) => {
-                e.target.src = CATEGORY_FALLBACK_IMAGES[product.category] || CATEGORY_FALLBACK_IMAGES.default;
-              }}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            {product.badge && (
-              <div className="absolute top-4 left-4">
-                <Badge variant="warning" size="md">
-                  {product.badge}
-                </Badge>
+        {/* Left Gallery - Amazon-Style Multi-Side Image Slider */}
+        <div className="lg:col-span-7">
+          <div className="flex flex-col-reverse md:flex-row gap-4 items-start">
+            {/* Left Vertical Thumbnail Rail (Amazon Style) */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex md:flex-col gap-2.5 overflow-x-auto md:overflow-y-auto w-full md:w-20 md:max-h-[480px] pb-2 md:pb-0 flex-shrink-0 select-none">
+                {product.images.map((img, idx) => {
+                  const angleNames = ['Front View', 'Side Angle', 'Back / Rear', 'Ports & Details', 'In-Use / Box'];
+                  const isSelected = selectedImage === idx;
+                  return (
+                    <button
+                      key={idx}
+                      onMouseEnter={() => setSelectedImage(idx)}
+                      onClick={() => setSelectedImage(idx)}
+                      className={`group relative rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 bg-slate-100 dark:bg-slate-800 ${
+                        isSelected
+                          ? 'border-brand-600 dark:border-amber-400 ring-2 ring-brand-500/20 shadow-md scale-100'
+                          : 'border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100 hover:border-slate-400'
+                      } w-16 h-16 sm:w-20 sm:h-20`}
+                      title={`View ${angleNames[idx] || `Angle ${idx + 1}`}`}
+                    >
+                      <img
+                        src={getProductImageUrl(product, idx)}
+                        alt={`Side ${idx + 1}`}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = CATEGORY_FALLBACK_IMAGES[product.category] || getCategorySvgFallback(product.category, product.name);
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute bottom-0 inset-x-0 bg-slate-950/75 text-[8px] text-white font-bold py-0.5 text-center truncate px-0.5">
+                        {angleNames[idx] || `Side ${idx + 1}`}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
-          </div>
 
-          {/* Thumbnails */}
-          {product.images && product.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {product.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all ${
-                    selectedImage === idx
-                      ? 'border-brand-600 dark:border-amber-400 scale-95 shadow-md'
-                      : 'border-transparent opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img
-                    src={getProductImageUrl(product, idx)}
-                    alt={`Angle ${idx + 1}`}
-                    onError={(e) => {
-                      e.target.src = CATEGORY_FALLBACK_IMAGES[product.category] || CATEGORY_FALLBACK_IMAGES.default;
+            {/* Main High-Res Image Stage with Slide Navigation Controls */}
+            <div className="flex-1 w-full relative aspect-square sm:aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl group">
+              <img
+                src={getProductImageUrl(product, selectedImage)}
+                alt={product.name}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = CATEGORY_FALLBACK_IMAGES[product.category] || getCategorySvgFallback(product.category, product.name);
+                }}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+
+              {/* Badge Overlay */}
+              {product.badge && (
+                <div className="absolute top-4 left-4 z-10">
+                  <Badge variant="warning" size="md">
+                    {product.badge}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Active Angle Indicator Tag */}
+              <div className="absolute bottom-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>
+                  Side {selectedImage + 1} of {product.images?.length || 1}:{' '}
+                  {['Front View', 'Side Profile', 'Rear / Visor', 'Close-Up Details', 'Lifestyle / In-Box'][selectedImage] || `Angle ${selectedImage + 1}`}
+                </span>
+              </div>
+
+              {/* Slide Left / Previous Button */}
+              {product.images && product.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage((prev) => (prev > 0 ? prev - 1 : product.images.length - 1));
                     }}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-white shadow-xl flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-110 z-10"
+                    title="Previous side"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage((prev) => (prev < product.images.length - 1 ? prev + 1 : 0));
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-white shadow-xl flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-110 z-10"
+                    title="Next side"
+                  >
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </button>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Right Product Details */}

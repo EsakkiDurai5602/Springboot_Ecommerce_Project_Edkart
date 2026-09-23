@@ -12,6 +12,7 @@ import {
   Menu,
   ChevronRight,
   ShieldCheck,
+  History,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -27,6 +28,7 @@ export const AdminLayout = () => {
   const navItems = [
     { name: 'Store Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Product Inventory (CRUD)', path: '/admin/products', icon: Package },
+    { name: 'Product Insertion History', path: '/admin/product-logs', icon: History },
     { name: 'Customer Orders', path: '/admin/orders', icon: ShoppingBag },
   ];
 

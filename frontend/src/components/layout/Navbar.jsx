@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, NavLink } from 'react-router-dom';
 import {
   ShoppingBag,
@@ -14,11 +14,15 @@ import {
   Package,
   Layers,
   LogOut,
+  Tag,
+  ArrowRight,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { CATEGORIES } from '../../utils/constants';
+import { productService } from '../../services/ecommerceServices';
+import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES, getCategorySvgFallback } from '../../utils/formatters';
 
 export const Navbar = () => {
   const { totalItems, setIsCartDrawerOpen } = useCart();
@@ -30,10 +34,60 @@ export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  // Live search suggestion state
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [allProductsCache, setAllProductsCache] = useState([]);
+  const searchContainerRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+
   const navigate = useNavigate();
+
+  // Load products for instant suggestion matching
+  useEffect(() => {
+    productService.getProducts().then((res) => {
+      setAllProductsCache(res.products || []);
+    }).catch(() => {});
+  }, []);
+
+  // Filter suggestions dynamically on keyword/category change
+  useEffect(() => {
+    const q = keyword.trim().toLowerCase();
+    if (!q) {
+      setSuggestions([]);
+      setIsSuggestionsOpen(false);
+      return;
+    }
+
+    const filtered = allProductsCache.filter((p) => {
+      const matchCat = selectedCategory === 'all' || p.category?.toLowerCase() === selectedCategory.toLowerCase();
+      const matchText = p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || p.seller?.toLowerCase().includes(q);
+      return matchCat && matchText;
+    }).slice(0, 6);
+
+    setSuggestions(filtered);
+    setIsSuggestionsOpen(true);
+  }, [keyword, selectedCategory, allProductsCache]);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target) &&
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(e.target)
+      ) {
+        setIsSuggestionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setIsSuggestionsOpen(false);
     if (keyword.trim() || selectedCategory !== 'all') {
       const params = new URLSearchParams();
       if (keyword.trim()) params.set('keyword', keyword.trim());
@@ -44,13 +98,14 @@ export const Navbar = () => {
     }
   };
 
+  const handleSelectSuggestion = (prod) => {
+    setIsSuggestionsOpen(false);
+    setKeyword('');
+    navigate(`/product/${prod.id}`);
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 via-brand-600 to-amber-500 text-white text-[11px] font-bold py-1.5 px-4 text-center">
-        ⚡ MEGA TECH SALE: Use code <span className="bg-white/20 px-1.5 py-0.5 rounded font-mono">EDKART10</span> for 10% Instant Discount on Flagship Smartphones & Laptops!
-      </div>
-
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
@@ -79,37 +134,122 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          {/* Search Bar with Category Selector */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl items-center">
-            <div className="flex w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 overflow-hidden focus-within:ring-2 focus-within:ring-brand-500 transition-all">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-300 dark:border-slate-700 px-3 py-2.5 focus:outline-none cursor-pointer"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900">
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+          {/* Desktop Search Bar with Category Selector & Live Suggestions */}
+          <div ref={searchContainerRef} className="hidden md:flex flex-1 max-w-xl relative">
+            <form onSubmit={handleSearch} className="w-full">
+              <div className="flex w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 overflow-hidden focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all shadow-sm">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-300 dark:border-slate-700 px-3 py-2.5 focus:outline-none cursor-pointer"
+                >
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900">
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
 
-              <input
-                type="text"
-                placeholder="Search iPhones, MacBooks, Sony Audio, PS5..."
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="flex-1 bg-transparent px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
-              />
+                <input
+                  type="text"
+                  placeholder="Search 100+ Flagships, MacBooks, Audio, PS5, Watches..."
+                  value={keyword}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setIsSuggestionsOpen(true);
+                  }}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="flex-1 bg-transparent px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
+                />
 
-              <button
-                type="submit"
-                className="px-4 bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition-colors"
-              >
-                <Search className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
+                {keyword && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKeyword('');
+                      setIsSuggestionsOpen(false);
+                    }}
+                    className="px-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                <button
+                  type="submit"
+                  className="px-4 bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition-colors"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+
+            {/* Live Autocomplete Suggestions Dropdown */}
+            {isSuggestionsOpen && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-scale-in">
+                <div className="p-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3">
+                  <span>Suggested Products ({suggestions.length})</span>
+                  <span className="text-brand-600 dark:text-amber-400 font-semibold">Instant Live Results</span>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {suggestions.map((prod) => (
+                    <button
+                      key={prod.id}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(prod)}
+                      className="w-full flex items-center gap-3 p-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700">
+                        <img
+                          src={getProductImageUrl(prod, 0)}
+                          alt={prod.name}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = CATEGORY_FALLBACK_IMAGES[prod.category] || getCategorySvgFallback(prod.category, prod.name);
+                          }}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase text-brand-600 dark:text-amber-400 bg-brand-50 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
+                            {prod.category}
+                          </span>
+                          {prod.stock <= 0 ? (
+                            <span className="text-[9px] font-bold text-rose-500">Out of Stock</span>
+                          ) : (
+                            <span className="text-[9px] text-emerald-600 font-medium">★ {prod.rating || 4.8}</span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5 group-hover:text-brand-600 dark:group-hover:text-amber-400">
+                          {prod.name}
+                        </h4>
+                      </div>
+
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono block">
+                          {formatCurrency(prod.price)}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-amber-400 ml-auto mt-0.5 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="p-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-center">
+                  <button
+                    type="button"
+                    onClick={handleSearch}
+                    className="text-xs font-bold text-brand-600 dark:text-amber-400 hover:underline flex items-center justify-center gap-1.5 mx-auto"
+                  >
+                    <span>View all search results for &ldquo;{keyword}&rdquo;</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-3">
@@ -216,13 +356,16 @@ export const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="md:hidden pb-3">
+        {/* Mobile Search Bar & Live Suggestions */}
+        <div ref={mobileSearchRef} className="md:hidden pb-3 relative">
           <form onSubmit={handleSearch} className="flex rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 overflow-hidden">
             <input
               type="text"
               placeholder="Search tech products..."
               value={keyword}
+              onFocus={() => {
+                if (suggestions.length > 0) setIsSuggestionsOpen(true);
+              }}
               onChange={(e) => setKeyword(e.target.value)}
               className="flex-1 bg-transparent px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
             />
@@ -230,6 +373,35 @@ export const Navbar = () => {
               <Search className="w-3.5 h-3.5" />
             </button>
           </form>
+
+          {isSuggestionsOpen && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50">
+              <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                {suggestions.map((prod) => (
+                  <button
+                    key={prod.id}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(prod)}
+                    className="w-full flex items-center gap-2.5 p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
+                    <img
+                      src={getProductImageUrl(prod, 0)}
+                      alt={prod.name}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = CATEGORY_FALLBACK_IMAGES[prod.category] || getCategorySvgFallback(prod.category, prod.name);
+                      }}
+                      className="w-8 h-8 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{prod.name}</p>
+                      <p className="text-[10px] text-brand-600 dark:text-amber-400 font-mono">{formatCurrency(prod.price)}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

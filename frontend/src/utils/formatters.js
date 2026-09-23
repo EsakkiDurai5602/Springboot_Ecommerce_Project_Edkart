@@ -56,17 +56,37 @@ export const calculateDiscount = (originalPrice, discountPercent) => {
 };
 
 export const CATEGORY_FALLBACK_IMAGES = {
-  Smartphones: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
-  Phone: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
-  Laptops: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
-  Audio: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
-  Wearables: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
-  Gaming: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800&auto=format&fit=crop&q=80',
-  Accessories: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&auto=format&fit=crop&q=80',
-  Electronics: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
-  Cloth: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-  Fashion: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=800&auto=format&fit=crop&q=80',
-  default: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80',
+  Smartphones: '/assets/products/iphone16_pro.jpg',
+  Phone: '/assets/products/iphone16_pro.jpg',
+  Laptops: '/assets/products/macbook_pro.jpg',
+  Audio: '/assets/products/sony_headphones.jpg',
+  Wearables: '/assets/products/watch_ultra.jpg',
+  Gaming: '/assets/products/ps5_console.jpg',
+  Accessories: '/assets/products/mx_master_mouse.jpg',
+  Electronics: '/assets/products/sony_oled_tv.jpg',
+  Cloth: '/assets/products/watch_ultra.jpg',
+  Fashion: '/assets/products/watch_ultra.jpg',
+  default: '/assets/products/iphone16_pro.jpg',
+};
+
+// Generates an inline SVG data URI as a guaranteed zero-latency fallback
+export const getCategorySvgFallback = (category = 'Electronics', title = '') => {
+  const cat = category || 'Electronics';
+  const label = (title || cat).slice(0, 24);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="400" fill="url(#g)" rx="24"/>
+    <circle cx="200" cy="180" r="70" fill="#f59e0b" fill-opacity="0.15"/>
+    <text x="200" y="190" font-family="system-ui, sans-serif" font-size="44" font-weight="900" fill="#f59e0b" text-anchor="middle">EK</text>
+    <text x="200" y="270" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#e2e8f0" text-anchor="middle">${label}</text>
+    <text x="200" y="295" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle">${cat.toUpperCase()}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 export const getProductImageUrl = (product, index = 0) => {
@@ -77,7 +97,7 @@ export const getProductImageUrl = (product, index = 0) => {
     rawUrl = product;
   } else if (Array.isArray(product.images) && product.images.length > 0) {
     const imgItem = product.images[index] || product.images[0];
-    rawUrl = typeof imgItem === 'string' ? imgItem : imgItem.url || imgItem.publicId || '';
+    rawUrl = typeof imgItem === 'string' ? imgItem : imgItem?.url || imgItem?.publicId || '';
   } else if (product.imageUrl) {
     rawUrl = product.imageUrl;
   } else if (product.image) {

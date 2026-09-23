@@ -45,7 +45,12 @@ export const AdminDashboardPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link to="/admin/product-logs">
+            <Button variant="secondary" className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40" leftIcon={<Sparkles className="w-4 h-4" />}>
+              Product Insertion Logs
+            </Button>
+          </Link>
           <Link to="/admin/products">
             <Button variant="cyan" leftIcon={<Plus className="w-4 h-4" />}>
               Add Product

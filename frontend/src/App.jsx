@@ -24,6 +24,7 @@ import { RegisterPage } from './features/auth/RegisterPage';
 // Admin Pages
 import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
 import { AdminProductsPage } from './features/admin/AdminProductsPage';
+import { AdminProductLogsPage } from './features/admin/AdminProductLogsPage';
 import { AdminOrdersPage } from './features/admin/AdminOrdersPage';
 
 // System
@@ -56,6 +57,7 @@ export const App = () => {
                     <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                     <Route path="/admin/products" element={<AdminProductsPage />} />
+                    <Route path="/admin/product-logs" element={<AdminProductLogsPage />} />
                     <Route path="/admin/orders" element={<AdminOrdersPage />} />
                   </Route>
                 </Route>

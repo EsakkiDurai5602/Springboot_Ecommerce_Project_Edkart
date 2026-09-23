@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { productService } from '../../services/ecommerceServices';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES } from '../../utils/formatters';
+import { formatCurrency, getProductImageUrl, CATEGORY_FALLBACK_IMAGES, getCategorySvgFallback } from '../../utils/formatters';
 import { CATEGORIES } from '../../utils/constants';
 import { StarRating } from '../../components/ui/StarRating';
 import { Button } from '../../components/ui/Button';
@@ -263,7 +263,8 @@ export const ShopPage = () => {
                         src={getProductImageUrl(p)}
                         alt={p.name}
                         onError={(e) => {
-                          e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
+                          e.target.onerror = null;
+                          e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || getCategorySvgFallback(p.category, p.name);
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -334,7 +335,8 @@ export const ShopPage = () => {
                       src={getProductImageUrl(p)}
                       alt={p.name}
                       onError={(e) => {
-                        e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || CATEGORY_FALLBACK_IMAGES.default;
+                        e.target.onerror = null;
+                        e.target.src = CATEGORY_FALLBACK_IMAGES[p.category] || getCategorySvgFallback(p.category, p.name);
                       }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />

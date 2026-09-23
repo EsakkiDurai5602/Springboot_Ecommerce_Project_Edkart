@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from './ecommerceData';
+import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS, INITIAL_PRODUCT_LOGS } from './ecommerceData';
 import { generateOrderNumber } from '../utils/formatters';
 
 const getStored = (key, defaultVal) => {
@@ -19,15 +19,53 @@ const setStored = (key, val) => {
   }
 };
 
-// Initialize & upgrade persistent storage
-const storedProducts = getStored('products', null);
-if (!storedProducts || !storedProducts.some(p => p.name?.includes('Pixel') || p.name?.includes('Razer') || p.name?.includes('OnePlus'))) {
+const CATALOG_VERSION = 'v3_525_real_photos';
+const currentVersion = localStorage.getItem('edkart_ec_catalog_version');
+
+// Always ensure 105 real photography products & 109 admin logs are synchronized
+if (currentVersion !== CATALOG_VERSION) {
   setStored('products', INITIAL_PRODUCTS);
+  setStored('product_logs', INITIAL_PRODUCT_LOGS);
+  localStorage.setItem('edkart_ec_catalog_version', CATALOG_VERSION);
+  console.log('[EdKart Store]: Synchronized 105 real photorealistic products & 109 admin logs (v3).');
 }
+
 if (!localStorage.getItem('edkart_ec_orders')) setStored('orders', INITIAL_ORDERS);
 if (!localStorage.getItem('edkart_ec_users')) setStored('users', INITIAL_USERS);
 
 const delay = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/* ================= PRODUCT AUDIT LOGS SERVICE ================= */
+export const productLogService = {
+  getProductLogs: async () => {
+    await delay(20);
+    let logs = getStored('product_logs', null);
+    if (!logs || logs.length < 100) {
+      logs = INITIAL_PRODUCT_LOGS;
+      setStored('product_logs', logs);
+    }
+    return logs;
+  },
+
+  addLog: async (logEntry) => {
+    const logs = getStored('product_logs', INITIAL_PRODUCT_LOGS);
+    const newLog = {
+      id: 'plog_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      timestamp: new Date().toISOString(),
+      adminEmail: 'admin@edkart.com',
+      adminName: 'Store Operations Admin',
+      ...logEntry,
+    };
+    logs.unshift(newLog);
+    setStored('product_logs', logs);
+    return newLog;
+  },
+
+  clearLogs: async () => {
+    setStored('product_logs', []);
+    return [];
+  },
+};
 
 /* ================= PRODUCT SERVICES ================= */
 export const productService = {
@@ -38,7 +76,7 @@ export const productService = {
       const res = await apiClient.get(endpoint, { params });
       if (res.data) {
         const raw = res.data.products || (Array.isArray(res.data) ? res.data : []);
-        if (raw.length > 0) {
+        if (raw.length >= 100) {
           list = raw.map(normalizeProduct);
         }
       }
@@ -46,9 +84,19 @@ export const productService = {
       // fallback to storage
     }
 
-    if (!list || list.length === 0) {
-      await delay(40);
+    if (!list || list.length < 100) {
+      await delay(30);
       list = getStored('products', INITIAL_PRODUCTS).map(normalizeProduct);
+    }
+
+    // Check inventory and trigger console alert for out of stock products
+    const outOfStockItems = list.filter((p) => p.stock <= 0);
+    if (outOfStockItems.length > 0) {
+      console.warn(
+        `%c[EdKart Admin Inventory Alert] ⚠️ Found ${outOfStockItems.length} OUT OF STOCK products in catalog:`,
+        'color: #ef4444; font-weight: bold; font-size: 12px;',
+        outOfStockItems.map((p) => ({ id: p.id, name: p.name, category: p.category, stock: p.stock }))
+      );
     }
 
     if (params.category && params.category !== 'all') {
@@ -123,6 +171,19 @@ export const productService = {
         const products = getStored('products', INITIAL_PRODUCTS);
         products.unshift(normalized);
         setStored('products', products);
+
+        // Record Admin Insertion Log
+        productLogService.addLog({
+          action: 'INSERTED',
+          productId: normalized.id,
+          productName: normalized.name,
+          category: normalized.category,
+          price: normalized.price,
+          stock: normalized.stock,
+          imagesCount: normalized.images?.length || 1,
+          details: `Admin published new SKU "${normalized.name}" with ${normalized.images?.length || 1} multi-angle photo assets.`,
+        });
+
         return normalized;
       }
     } catch (e) {
@@ -163,6 +224,19 @@ export const productService = {
 
     products.unshift(newProd);
     setStored('products', products);
+
+    // Record Admin Insertion Log
+    productLogService.addLog({
+      action: 'INSERTED',
+      productId: newProd.id,
+      productName: newProd.name,
+      category: newProd.category,
+      price: newProd.price,
+      stock: newProd.stock,
+      imagesCount: newProd.images.length,
+      details: `Admin inserted "${newProd.name}" (${newProd.category}) with ${newProd.images.length} multi-angle sides.`,
+    });
+
     return newProd;
   },
 
@@ -186,15 +260,74 @@ export const productService = {
         }));
       }
 
+      const prevStock = products[index].stock;
+      const newStock = updatedFields.stock !== undefined ? Number(updatedFields.stock) : products[index].stock;
+
       products[index] = {
         ...products[index],
         ...updatedFields,
         price: updatedFields.price !== undefined ? Number(updatedFields.price) : products[index].price,
-        stock: updatedFields.stock !== undefined ? Number(updatedFields.stock) : products[index].stock,
+        stock: newStock,
         images,
       };
       setStored('products', products);
+
+      // Record Admin Update Log
+      productLogService.addLog({
+        action: newStock === 0 ? 'OUT_OF_STOCK_ALERT' : 'UPDATED',
+        productId: products[index].id,
+        productName: products[index].name,
+        category: products[index].category,
+        price: products[index].price,
+        stock: newStock,
+        imagesCount: images.length,
+        details: newStock === 0
+          ? `WARNING: Stock dropped to 0 for "${products[index].name}". Console alert dispatched.`
+          : `Admin updated product details & pricing for "${products[index].name}".`,
+      });
+
+      if (newStock === 0) {
+        console.warn(
+          `%c[EdKart Admin Console Alert]: Product "${products[index].name}" is OUT OF STOCK (0 units remaining)!`,
+          'color: #ef4444; font-weight: bold;'
+        );
+      }
+
       return normalizeProduct(products[index]);
+    }
+    throw { status: 404, message: 'Product not found' };
+  },
+
+  updateStock: async (id, newStock) => {
+    const stockVal = Math.max(0, Number(newStock));
+    const products = getStored('products', INITIAL_PRODUCTS);
+    const prod = products.find((p) => String(p.id) === String(id));
+    if (prod) {
+      prod.stock = stockVal;
+      setStored('products', products);
+
+      // Log stock adjustment
+      productLogService.addLog({
+        action: stockVal === 0 ? 'OUT_OF_STOCK_ALERT' : 'STOCK_ADJUSTED',
+        productId: prod.id,
+        productName: prod.name,
+        category: prod.category,
+        price: prod.price,
+        stock: stockVal,
+        imagesCount: prod.images?.length || 1,
+        details: stockVal === 0
+          ? `ALERT: Stock level set to 0. Product marked OUT OF STOCK.`
+          : `Admin adjusted stock level to ${stockVal} units.`,
+      });
+
+      if (stockVal === 0) {
+        console.warn(
+          `%c[EdKart Admin Console Alert]: Product "${prod.name}" (ID: ${prod.id}) is OUT OF STOCK!`,
+          'color: #ef4444; font-weight: bold; font-size: 13px;'
+        );
+      }
+
+      return prod;
     }
     throw { status: 404, message: 'Product not found' };
   },
@@ -208,8 +341,24 @@ export const productService = {
 
     await delay(100);
     let products = getStored('products', INITIAL_PRODUCTS);
+    const target = products.find((p) => String(p.id) === String(id));
     products = products.filter((p) => String(p.id) !== String(id));
     setStored('products', products);
+
+    if (target) {
+      // Record Admin Deletion Log
+      productLogService.addLog({
+        action: 'DELETED',
+        productId: target.id,
+        productName: target.name,
+        category: target.category,
+        price: target.price,
+        stock: target.stock,
+        imagesCount: target.images?.length || 1,
+        details: `Admin permanently removed product "${target.name}" from catalog inventory.`,
+      });
+    }
+
     return { success: true };
   },
 
